@@ -1130,16 +1130,16 @@ if ((widget.product['status'] ?? 'active') != 'active')
                 final name = [first, last].where((s) => s.isNotEmpty).join(' ');
 
                if (mounted) {
-  // ✅ Get announcement from conversation response, or build from product
-  final announcement = conversation['announcement'] != null
-      ? Map<String, dynamic>.from(conversation['announcement'])
-      : {
-          'id': widget.product['id'],
-          'title': widget.product['name'] ?? widget.product['title'] ?? '',
-          'price': widget.product['priceValue'] ?? widget.product['price'] ?? '',
-          'photo': widget.product['photo'] ?? widget.product['image'] ?? '',
-          'currency': 'DA',
-        };
+  
+  final announcement = {
+    'id': widget.product['id'],
+    'title': widget.product['name'] ?? widget.product['title'] ?? '',
+    'price': widget.product['priceValue'] ?? widget.product['price'] ?? '',
+    'photo': galleryImages.isNotEmpty && galleryImages[0].isNotEmpty
+      ? galleryImages[0]  // ✅ use the already-resolved first image
+      : '',
+    'currency': 'DA',
+  };
 
   Navigator.push(
     context,

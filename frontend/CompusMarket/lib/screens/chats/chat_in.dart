@@ -30,6 +30,7 @@ class ChatsInScreen extends StatefulWidget {
 class _ChatsInScreenState extends State<ChatsInScreen> {
   List<dynamic> messages = [];
   bool isLoading = true;
+    late bool _isOnline;
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   WebSocketChannel? _channel;
@@ -37,6 +38,7 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
   @override
   void initState() {
     super.initState();
+     _isOnline = widget.isOnline;
     _loadMessages();
     _markAsRead();
     _connectWebSocket();
@@ -79,9 +81,13 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
       _channel!.stream.listen(
         (data) {
           final newMessage = jsonDecode(data);
-          setState(() => messages.add(newMessage));
-          _scrollToBottom();
-        },
+         if (newMessage['type'] == 'online_status') {
+  setState(() => _isOnline = newMessage['is_online'] == true);
+  return;
+}
+ setState(() => messages.add(newMessage));
+    _scrollToBottom();
+},
         onError: (e) => debugPrint('WebSocket error: $e'),
         onDone: () => debugPrint('WebSocket closed'),
       );
@@ -264,7 +270,7 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
                       ? Icon(Icons.person, size: 22, color: Colors.grey[600])
                       : null,
                 ),
-                if (widget.isOnline)
+                if (_isOnline)
                   Positioned(
                     bottom: 0,
                     right: 0,

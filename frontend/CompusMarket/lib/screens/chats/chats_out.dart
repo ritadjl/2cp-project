@@ -14,6 +14,7 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
   List conversations = [];
   bool isLoading = true;
   String? error;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -148,6 +149,7 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
                 vertical: screenHeight * 0.02, horizontal: screenWidth * 0.03),
             height: screenHeight * 0.065,
             child: TextField(
+               onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
               expands: true,
               maxLines: null,
               decoration: InputDecoration(
@@ -190,11 +192,25 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
                         ? const Center(child: Text('No conversations yet'))
                         : RefreshIndicator(
                             onRefresh: _loadConversations,
-                            child: ListView.builder(
-                              itemCount: conversations.length,
+                            child:  Builder(builder: (context) {
+                  // ✅ ADD THIS RIGHT HERE, before ListView
+                  final filtered = conversations.where((conv) {
+                    final conv_ = conv as Map<String, dynamic>;
+                    final other = _getOtherUser(conv_);
+                    final name = _getDisplayName(other).toLowerCase();
+                    final msg = (conv_['last_message'] ?? '').toString().toLowerCase();
+                    return name.contains(_searchQuery) || msg.contains(_searchQuery);
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+            return const Center(child: Text('No results found'));
+          }
+                           return ListView.builder(
+                              
+                               itemCount: filtered.length,    
                               itemBuilder: (context, index) {
                                 final conv =
-                                    conversations[index] as Map<String, dynamic>;
+                                    filtered[index] as Map<String, dynamic>;
                                 final otherUser = _getOtherUser(conv);
                                 final name = _getDisplayName(otherUser);
                                 final avatarUrl = _getAvatar(otherUser);
@@ -214,6 +230,8 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
                                     : null;
                                 final productPhoto =
                                     announcement?['photo']?.toString() ?? '';
+
+                                     print('💬 unread for $name: $unread | isFromMe: $isFromMe');
 
                                 return Column(
                                   children: [
@@ -318,18 +336,15 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
                                                           overflow:
                                                               TextOverflow.ellipsis,
                                                           style: TextStyle(
-                                                            fontFamily: 'Inter',
-                                                            fontSize:
-                                                                screenWidth * 0.033,
-                                                            fontWeight: (!isFromMe &&
-                                                                    unread > 0)
-                                                                ? FontWeight.bold
-                                                                : FontWeight.normal,
-                                                            color: (!isFromMe &&
-                                                                    unread > 0)
-                                                                ? Colors.black
-                                                                : Colors.grey,
-                                                          ),
+  fontFamily: 'Inter',
+  fontSize: screenWidth * 0.033,
+  fontWeight: (!isFromMe && unread > 0)
+      ? FontWeight.bold
+      : FontWeight.normal,
+  color: (!isFromMe && unread > 0)
+      ? Colors.black87  // ✅ dark for unread
+      : Colors.grey,    // ✅ grey for read/sent
+),
                                                         ),
                                                       ),
                                                       SizedBox(
@@ -365,30 +380,30 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
                                                             ),
                                                         ],
                                                       ),
-                                                      if (productPhoto
-                                                          .isNotEmpty) ...[
-                                                        SizedBox(
-                                                            width:
-                                                                screenWidth * 0.02),
-                                                        ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                  6),
-                                                          child: Image.network(
-                                                            productPhoto,
-                                                            width:
-                                                                screenWidth * 0.11,
-                                                            height:
-                                                                screenWidth * 0.11,
-                                                            fit: BoxFit.cover,
-                                                            errorBuilder: (_,
-                                                                    __,
-                                                                    ___) =>
-                                                                const SizedBox
-                                                                    .shrink(),
-                                                          ),
-                                                        ),
-                                                      ],
+                                                      // if (productPhoto
+                                                      //     .isNotEmpty) ...[
+                                                      //   SizedBox(
+                                                      //       width:
+                                                      //           screenWidth * 0.02),
+                                                      //   ClipRRect(
+                                                      //     borderRadius:
+                                                      //         BorderRadius.circular(
+                                                      //             6),
+                                                      //     child: Image.network(
+                                                      //       productPhoto,
+                                                      //       width:
+                                                      //           screenWidth * 0.11,
+                                                      //       height:
+                                                      //           screenWidth * 0.11,
+                                                      //       fit: BoxFit.cover,
+                                                      //       errorBuilder: (_,
+                                                      //               __,
+                                                      //               ___) =>
+                                                      //           const SizedBox
+                                                      //               .shrink(),
+                                                      //     ),
+                                                      //   ),
+                                                      // ],
                                                     ],
                                                   ),
                                                 ],
@@ -406,8 +421,8 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
                                   ],
                                 );
                               },
-                            ),
-                          ),
+                            );}
+                          ),),
           ),
         ],
       ),
