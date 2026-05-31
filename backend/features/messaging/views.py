@@ -9,6 +9,7 @@ from drf_spectacular.utils import extend_schema
 import redis.asyncio as aioredis
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
+from rest_framework.parsers import MultiPartParser
 
 User = get_user_model()
 
@@ -175,6 +176,8 @@ class DeleteMessageView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class SendImageMessageView(APIView):
+    parser_classes = [MultiPartParser]
+
     def post(self, request, conversation_id):
         try:
             conversation = Conversation.objects.get(id=conversation_id)
@@ -188,15 +191,12 @@ class SendImageMessageView(APIView):
         if not image:
             return Response({'error': 'image required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        msg = Message.objects.create(
+        message = Message.objects.create(
             conversation=conversation,
             sender=request.user,
             content='',
             image=image
         )
 
-        return Response({
-            'id': str(msg.id),
-            'image_url': request.build_absolute_uri(msg.image.url),
-            'timestamp': str(msg.timestamp),
-        }, status=status.HTTP_201_CREATED)
+        serializer = MessageSerializer(message, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
