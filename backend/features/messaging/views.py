@@ -52,7 +52,11 @@ class ConversationListView(APIView):
             Q(buyer=user, is_deleted_by_buyer=False) |
             Q(seller=user, is_deleted_by_seller=False)
         ).order_by('-created_at')
-        serializer = ConversationSerializer(conversations, many=True)
+        serializer = ConversationSerializer(
+            conversations,
+            many=True,
+            context={'request': request}  # ← ADD THIS
+        )
         return Response(serializer.data)
 
 class MessageListView(APIView):

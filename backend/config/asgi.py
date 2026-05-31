@@ -15,14 +15,17 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
 from features.messaging.middleware import JWTAuthMiddleware
 import features.messaging.routing as messaging_routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": JWTAuthMiddleware(
-        URLRouter(
-            messaging_routing.websocket_urlpatterns
+    "websocket": AllowedHostsOriginValidator(  # ← WRAP with this
+        JWTAuthMiddleware(
+            URLRouter(
+                messaging_routing.websocket_urlpatterns
+            )
         )
     ),
 })

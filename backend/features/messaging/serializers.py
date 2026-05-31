@@ -3,7 +3,8 @@ from features.announcements.models import Announcement
 from features.announcements.serializers import AnnouncementListSerializer
 from .models import Conversation, Message
 from django.contrib.auth import get_user_model
-
+import redis
+from django.conf import settings
 User = get_user_model()
 
 
@@ -56,6 +57,21 @@ class ConversationSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
     last_message_time = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
+
+    def get_is_online(self, obj):
+        request = self.context.get('request')
+        if request is None:
+            return False
+        current_user = request.user
+        other_user = obj.buyer if current_user == obj.seller else obj.seller
+        try:
+            r = redis.from_url(settings.REDIS_URL)
+            result = r.get(f"user_{other_user.id}_online")
+            r.close()
+            return result is not None
+        except Exception:
+            return False
 
     def get_last_message(self, obj):
         msg = obj.messages.order_by('-timestamp').first()
@@ -75,7 +91,7 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = [
             'id', 'buyer', 'seller', 'announcement', 'announcement_id',
-            'created_at', 'last_message', 'last_message_time', 'unread_count'
+            'created_at', 'last_message', 'last_message_time', 'unread_count', 'is_online'
         ]
 
 class StartConversationSerializer(serializers.Serializer):
