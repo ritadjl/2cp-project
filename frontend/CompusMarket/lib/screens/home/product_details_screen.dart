@@ -821,12 +821,12 @@ if ((widget.product['status'] ?? 'active') != 'active')
                   // FIXED — shows seller_photo from API, falls back to icon
 CircleAvatar(
   backgroundColor: const Color(0xFF1A73E8),
-  backgroundImage: (widget.product['seller_avatar'] != null &&
-          widget.product['seller_avatar'].toString().isNotEmpty)
-      ? NetworkImage(widget.product['seller_avatar'].toString())
+  backgroundImage: (widget.product['seller_photo'] != null &&
+          widget.product['seller_photo'].toString().isNotEmpty)
+      ? NetworkImage(widget.product['seller_photo'].toString())
       : null,
-  child: (widget.product['seller_avatar'] == null ||
-          widget.product['seller_avatar'].toString().isEmpty)
+  child: (widget.product['seller_photo'] == null ||
+          widget.product['seller_photo'].toString().isEmpty)
       ? const Icon(Icons.person, color: Colors.white)
       : null,
 ),

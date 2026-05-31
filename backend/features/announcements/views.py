@@ -452,3 +452,16 @@ class ReportListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return Report.objects.filter(reporter_id=self.request.user.id)
+    
+class DebugSellerPhotoView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from features.authentication.models import Student
+        a = Announcement.objects.get(id=1)
+        s = Student.objects.filter(user_id=a.student_id).first()
+        return Response({
+            'student_id': str(a.student_id),
+            'student_found': s is not None,
+            'profile_picture': str(s.profile_picture) if s else None,
+        })    
