@@ -44,15 +44,34 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "online.status",
+                "user_id": str(self.scope['user'].id),
+                "is_online": True
+            }
+        )
+
     async def disconnect(self, close_code):
         if hasattr(self, 'redis'):
             await self.redis.delete(f"user_{self.scope['user'].id}_online")
             await self.redis.aclose()
 
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        if hasattr(self, 'room_group_name'):
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "online.status",
+                    "user_id": str(self.scope['user'].id),
+                    "is_online": False
+                }
+            )
+
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -94,6 +113,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         await self.send(text_data=json.dumps(event["payload"]))
 
+    async def online_status(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "online_status",
+            "user_id": event["user_id"],
+            "is_online": event["is_online"]
+        }))
+
     async def notify_receiver(self, message):
         try:
             conversation = await Conversation.objects.aget(
@@ -103,7 +129,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             receiver_id = conversation.seller_id if sender.id == conversation.buyer_id else conversation.buyer_id
 
-            # ── Save notification to DB always ────────────────────────────
             await asyncio.to_thread(
                 create_notification,
                 user_id=receiver_id,
@@ -115,7 +140,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 message_preview=message[:100],
             )
 
-            # ── Always send Firebase push ─────────────────────────────────
             try:
                 device = await UserDevice.objects.aget(user_id=receiver_id)
                 await asyncio.to_thread(
