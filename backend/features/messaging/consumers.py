@@ -96,7 +96,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             receiver_id = conversation.seller_id if sender.id == conversation.buyer_id else conversation.buyer_id
 
-            # ── Save notification to DB ───────────────────────────────────
+            # ── Save notification to DB always ────────────────────────────
             await asyncio.to_thread(
                 create_notification,
                 user_id=receiver_id,
@@ -108,19 +108,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 message_preview=message[:100],
             )
 
-            # ── Send Firebase push only if receiver is offline ────────────
-            is_online = await self.redis.get(f"user_{receiver_id}_online")
-            if not is_online:
-                try:
-                    device = await UserDevice.objects.aget(user_id=receiver_id)
-                    await asyncio.to_thread(
-                        send_push_notification,
-                        device.device_token,
-                        f"New message from {sender.full_name}",
-                        message
-                    )
-                except UserDevice.DoesNotExist:
-                    pass
+            # ── Always send Firebase push ─────────────────────────────────
+            try:
+                device = await UserDevice.objects.aget(user_id=receiver_id)
+                await asyncio.to_thread(
+                    send_push_notification,
+                    device.device_token,
+                    f"New message from {sender.full_name}",
+                    message
+                )
+            except UserDevice.DoesNotExist:
+                print("DEBUG: No device token found for receiver")
 
         except Exception as e:
+            import traceback
             print(f"notify_receiver error: {e}")
+            print(traceback.format_exc())
