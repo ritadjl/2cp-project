@@ -36,5 +36,8 @@ urlpatterns = [
     # reports
     path('reports/', views.ReportCreateAPIView.as_view(), name='report-create'),
     path('reports/list/', views.ReportListAPIView.as_view(), name='report-list'),
+
+    #debug
+    path('debug/seller-photo/', views.DebugSellerPhotoView.as_view(), name='debug-seller-photo'),
 ]
 
