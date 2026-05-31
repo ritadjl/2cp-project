@@ -9,8 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-   await Firebase.initializeApp();
-
+await Firebase.initializeApp(
+);
    // Show notification when app is in foreground
 FirebaseMessaging.onMessage.listen((RemoteMessage message) {
   print('📩 Foreground message: ${message.notification?.title}');

@@ -9,6 +9,7 @@ import '../../services/favorite_service.dart';
 import '../chats/chat_in.dart';
 import 'package:compusmarket/screens/profiles/My_profile.dart';
 import '../profiles/His_profile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -22,6 +23,7 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   late bool isFavorite;
   late bool isRated;
+  int _userRating = 0;
   bool isDescriptionExpanded = false;
   List<Map<String, dynamic>> _comments = [];
   final TextEditingController _commentController = TextEditingController();
@@ -31,6 +33,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
+     _loadSavedRating();
     debugPrint('PRODUCT DATA: ${widget.product}');
 
     final productName = widget.product['name'] ?? widget.product['title'] ?? '';
@@ -75,6 +78,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return sellerId != null && sellerId == MsgService.currentUserId;
   }
 
+Future<void> _loadSavedRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt('rating_${widget.product['id']}') ?? 0;
+    if (mounted) setState(() => _userRating = saved);
+  }
   void _toggleFavorite() async {
     final bool isReal = widget.product['isReal'] == true;
     final String productName = _productName;
@@ -393,8 +401,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         final commentsData = await AnnouncementService.getComments(
           widget.product['id'],
         );
-        debugPrint('COMMENT DATA: ${commentsData.first}');
-
+if (commentsData.isNotEmpty) debugPrint('COMMENT DATA: ${commentsData.first}');
         if (mounted) {
           setState(() {
             _comments = List<Map<String, dynamic>>.from(
@@ -548,18 +555,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               if (widget.product['isReal'] == true) {
                                 try {
                                   await AnnouncementService.createComment(
-                                    widget.product['id'],
-                                    text,
-                                  );
-                                  if (mounted) {
-                                    setState(() {
-                                      _comments.add({
-                                        'text': text,
-                                        'user': 'You',
-                                      });
-                                    });
-                                    setStateBottomSheet(() {});
-                                  }
+  widget.product['id'],
+  text,
+);
+if (mounted) {
+  // Reload comments from API after posting
+  isFetching = false;
+  loadData(setStateBottomSheet);
+}
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -923,39 +926,43 @@ if ((widget.product['status'] ?? 'active') != 'active')
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        GestureDetector(
-                          onTap: _toggleRating,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.amber.withOpacity(0.5),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  isRated ? Icons.star : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Rate',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        Container(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  decoration: BoxDecoration(
+    color: Colors.amber.withOpacity(0.1),
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: Colors.amber.withOpacity(0.5)),
+  ),
+  child: Row(
+    children: List.generate(5, (index) {
+      return GestureDetector(
+        onTap: () async {
+  final int selectedRating = index + 1;
+  setState(() {
+    _userRating = selectedRating;
+    isRated = true;
+  });
+   final prefs = await SharedPreferences.getInstance(); // ← add
+  await prefs.setInt('rating_${widget.product['id']}', selectedRating);
+  if (widget.product['isReal'] == true) {
+    try {
+      await AnnouncementService.rateAnnouncement(
+        widget.product['id'],
+        rating: selectedRating,
+      );
+    } catch (e) {
+      print('❌ Rating failed: $e');
+    }
+  }
+},
+        child: Icon(
+index < _userRating ? Icons.star : Icons.star_border,          color: Colors.amber,
+          size: 20,
+        ),
+      );
+    }),
+  ),
+),
                         const SizedBox(width: 15),
                         GestureDetector(
                           onTap: () => _showCommentsSheet(context),

@@ -289,29 +289,7 @@ class _AddNewProductScreenState extends State<AddNewProductScreen> {
           photos: compressedImages,
         );
 
-        globalRealProductsNotifier.value = [
-          {
-            'id': apiProduct['id'].toString(),
-            'name': apiProduct['title'] ?? _nameController.text.trim(),
-            'price':
-                '${apiProduct['price'] ?? _priceController.text.trim()} DA',
-            'priceValue': double.tryParse(
-                    (apiProduct['price'] ?? _priceController.text.trim())
-                        .toString()) ??
-                0.0,
-            'category': _selectedType,
-            'rating': 0.0,
-            'isRated': false,
-            'image': _selectedImages.isNotEmpty
-                ? _selectedImages.first.path
-                : '',
-            'images': _selectedImages.map((f) => f.path).toList(),
-            'description': _descriptionController.text.trim(),
-            'isReal': true,
-            'isUserAdded': true,
-          },
-          ...globalRealProductsNotifier.value,
-        ];
+        
 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

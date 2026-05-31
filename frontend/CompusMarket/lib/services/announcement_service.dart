@@ -225,15 +225,15 @@ print('📥 POST Body: ${response.body}');
     }
   }
   /// Rate an announcement
-  static Future<void> rateAnnouncement(int announcementId) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/announcements/$announcementId/reviews/'),
-      headers: await ApiConfig.getHeaders(),
-      body: jsonEncode({
-        'rating': 5,
-        'comment': '',
-      }),
-    );
+  static Future<void> rateAnnouncement(int announcementId, {int rating = 5}) async {
+  final response = await http.post(
+    Uri.parse('${ApiConfig.baseUrl}/announcements/$announcementId/reviews/'),
+    headers: await ApiConfig.getHeaders(),
+    body: jsonEncode({
+  'rating': rating,
+  'comment': 'rated',
+}),
+  );
 
     if (response.statusCode != 201) {
       throw Exception('Failed to rate announcement: ${response.body}');

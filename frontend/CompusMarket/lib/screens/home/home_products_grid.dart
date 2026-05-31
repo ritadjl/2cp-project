@@ -413,14 +413,7 @@ if ((product['status'] ?? 'active') != 'active')
                           color: const Color(0xFF1A73E8),
                         ),
                       ),
-                      GestureDetector(
-  onTap: onRatingToggle,
-  child: Icon(
-    isRated ? Icons.star : Icons.star_border,
-    color: isRated ? Colors.amber : Colors.grey,
-    size: screenWidth * 0.055 * 0.7,
-  ),
-),
+                      
                     ],
                   ),
                 ],
