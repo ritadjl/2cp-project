@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../services/msg_service.dart';
 import '../../screens/home/product_details_screen.dart';
+import 'package:http/http.dart' as http;
 
 class ChatsInScreen extends StatefulWidget {
   final String name;
@@ -30,6 +31,7 @@ class ChatsInScreen extends StatefulWidget {
 class _ChatsInScreenState extends State<ChatsInScreen> {
   List<dynamic> messages = [];
   bool isLoading = true;
+  dynamic _replyingTo;
     late bool _isOnline;
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -39,6 +41,9 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
   void initState() {
     super.initState();
      _isOnline = widget.isOnline;
+
+     print('🟢 isOnline on open: ${widget.isOnline}');
+    
     _loadMessages();
     _markAsRead();
     _connectWebSocket();
@@ -96,12 +101,6 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
     }
   }
 
-  void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _channel == null) return;
-    _channel!.sink.add(jsonEncode({'message': text}));
-    _controller.clear();
-  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -321,124 +320,208 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
                             top: 15, left: 15, right: 15, bottom: 15),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
-                          final msg = messages[messages.length - 1 - index];
-                          final isMe = _isMe(msg);
-                          final time = _formatTime(msg['timestamp']);
-                          final isRead = msg['is_read'] ?? false;
+  final msg = messages[messages.length - 1 - index];
+  final isMe = _isMe(msg);
+  final time = _formatTime(msg['timestamp']);
+  final isRead = msg['is_read'] ?? false;
 
-                          return Align(
-                            alignment: isMe
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isMe
-                                    ? const Color(0xff2853af)
-                                    : Colors.grey[300],
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(15),
-                                  topRight: const Radius.circular(15),
-                                  bottomLeft: isMe
-                                      ? const Radius.circular(15)
-                                      : Radius.zero,
-                                  bottomRight: isMe
-                                      ? Radius.zero
-                                      : const Radius.circular(15),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: isMe
-                                    ? CrossAxisAlignment.end
-                                    : CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    msg['content'] ?? '',
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.04,
-                                      color:
-                                          isMe ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        time,
-                                        style: TextStyle(
-                                          fontSize: screenWidth * 0.027,
-                                          color: isMe
-                                              ? Colors.white70
-                                              : Colors.grey[600],
-                                        ),
-                                      ),
-                                      if (isMe) ...[
-                                        const SizedBox(width: 4),
-                                        Icon(
-                                          isRead
-                                              ? Icons.done_all
-                                              : Icons.done,
-                                          size: screenWidth * 0.035,
-                                          color: isRead
-                                              ? Colors.lightBlueAccent
-                                              : Colors.white70,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+  return GestureDetector(
+    onLongPress: () => _showMessageOptions(context, msg, isMe),
+    child: Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
+        decoration: BoxDecoration(
+          color: isMe ? const Color(0xff2853af) : Colors.grey[300],
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(15),
+            topRight: const Radius.circular(15),
+            bottomLeft: isMe ? const Radius.circular(15) : Radius.zero,
+            bottomRight: isMe ? Radius.zero : const Radius.circular(15),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            // ✅ Reply preview inside bubble
+            if (msg['reply_to'] != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? Colors.blue[800]
+                      : Colors.grey[400],
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border(
+                    left: BorderSide(
+                      color: isMe ? Colors.lightBlueAccent : const Color(0xff2853af),
+                      width: 3,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      msg['reply_to']['sender_name'] ?? '',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isMe ? Colors.lightBlueAccent : const Color(0xff2853af),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      msg['reply_to']['content'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isMe ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // ✅ Message text
+            Text(
+              msg['content'] ?? '',
+              style: TextStyle(
+                fontSize: screenWidth * 0.04,
+                color: isMe ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.027,
+                    color: isMe ? Colors.white70 : Colors.grey[600],
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    isRead ? Icons.done_all : Icons.done,
+                    size: screenWidth * 0.035,
+                    color: isRead ? Colors.lightBlueAccent : Colors.white70,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+},
                       ),
           ),
         ],
       ),
 
       bottomNavigationBar: Container(
-        color: Colors.transparent,
-        padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.035,
-            vertical: screenHeight * 0.0084),
-        margin: EdgeInsets.only(bottom: screenHeight * 0.05),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                onSubmitted: (_) => _sendMessage(),
-                decoration: InputDecoration(
-                  prefixIcon: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.add),
-                    iconSize: screenWidth * 0.06,
-                  ),
-                  hintText: "Write a message...",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  fillColor: const Color(0xffF0F0F0),
-                  filled: true,
+  color: Colors.white,
+  padding: EdgeInsets.symmetric(
+    horizontal: screenWidth * 0.035,
+    vertical: screenHeight * 0.0084,
+  ),
+  margin: EdgeInsets.only(bottom: screenHeight * 0.05),
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // ✅ Reply preview bar above input
+      if (_replyingTo != null)
+        Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xffEEF2FF),
+            borderRadius: BorderRadius.circular(12),
+            border: const Border(
+              left: BorderSide(color: Color(0xff2853af), width: 4),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Replying to',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff2853af),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      (_replyingTo['content'] ?? '').toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            SizedBox(width: screenWidth * 0.04),
-            CircleAvatar(
-              backgroundColor: Colors.black,
-              radius: 25,
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: _sendMessage,
+              IconButton(
+                icon: const Icon(Icons.close, size: 18, color: Color(0xff2853af)),
+                onPressed: () => setState(() => _replyingTo = null),
+              ),
+            ],
+          ),
+        ),
+
+      // ✅ Input row
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              onSubmitted: (_) => _sendMessage(),
+              decoration: InputDecoration(
+                prefixIcon: IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.add),
+                  iconSize: screenWidth * 0.06,
+                ),
+                hintText: "Write a message...",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                fillColor: const Color(0xffF0F0F0),
+                filled: true,
               ),
             ),
-          ],
-        ),
+          ),
+          SizedBox(width: screenWidth * 0.04),
+          CircleAvatar(
+            backgroundColor: const Color(0xff2853af),
+            radius: 25,
+            child: IconButton(
+              icon: const Icon(Icons.send, color: Colors.white),
+              onPressed: _sendMessage,
+            ),
+          ),
+        ],
       ),
+    ],
+  ),
+),
     );
   }
 
@@ -532,5 +615,170 @@ void _confirmDelete(BuildContext context) {
       ],
     ),
   );
+}
+void _showMessageOptions(BuildContext context, dynamic msg, bool isMe) {
+  showDialog(
+    context: context,
+    barrierColor: Colors.black26,
+    builder: (_) => Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ✅ Message preview at top of popup
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              margin: const EdgeInsets.only(bottom: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xffEEF2FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                (msg['content'] ?? '').toString(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xff2853af),
+                ),
+              ),
+            ),
+
+            // ✅ Reply option
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() => _replyingTo = msg);
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: const Row(
+                  children: [
+                    Icon(Icons.reply, color: Color(0xff2853af), size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Reply',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Color(0xff2853af),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const Divider(height: 1, color: Color(0xffF0F0F0)),
+
+            // ✅ Delete option — only for own messages
+            if (isMe)
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteMessage(msg);
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      SizedBox(width: 12),
+                      Text(
+                        'Delete',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // ✅ Cancel
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: const Row(
+                  children: [
+                    Icon(Icons.close, color: Colors.grey, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 15, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Future<void> _deleteMessage(dynamic msg) async {
+  final messageId = msg['id'];
+  try {
+    final res = await http.delete(
+      Uri.parse('${MsgService.baseUrl}/messaging/conversations/${widget.conversationId}/messages/$messageId/delete/'),
+      headers: {'Authorization': 'Bearer ${AuthService.accessToken}'},
+    );
+    if (res.statusCode == 204) {
+      setState(() => messages.removeWhere(
+          (m) => m['id'].toString() == messageId.toString()));
+    } else if (res.statusCode == 403) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You can't delete this message")),
+        );
+      }
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete: $e')),
+      );
+    }
+  }
+}
+
+void _sendMessage() {
+  final text = _controller.text.trim();
+  if (text.isEmpty || _channel == null) return;
+
+  final payload = <String, dynamic>{'message': text};
+  if (_replyingTo != null) {
+    payload['reply_to_id'] = _replyingTo['id'];
+  }
+
+  _channel!.sink.add(jsonEncode(payload));
+  _controller.clear();
+  setState(() => _replyingTo = null);
 }
 }

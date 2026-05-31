@@ -19,6 +19,7 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
   @override
   void initState() {
     super.initState();
+    
     _loadConversations();
   }
 
@@ -28,9 +29,14 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
       if (!mounted) return;
       setState(() {
         conversations = data;
-        print('💬 CONV SAMPLE: ${data.isNotEmpty ? data[0] : "empty"}');
-        isLoading = false;
-      });
+       if (data.isNotEmpty) {
+    print('🟢 conv keys: ${(data[0] as Map).keys.toList()}');
+    print('🟢 is_online value: ${data[0]['is_online']}');
+    print('🟢 other_user_online: ${data[0]['other_user_online']}');
+  }
+  print('💬 CONV SAMPLE: ${data.isNotEmpty ? data[0] : "empty"}');
+  isLoading = false;
+});
     } catch (e) {
       if (!mounted) return;
       setState(() {
