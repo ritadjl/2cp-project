@@ -83,6 +83,7 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
     'university': item['university'] ?? '',
     'photos': item['photos'],
     'status': item['status']?.toString() ?? 'active',
+    'seller_photo': item['seller_photo'],
   };
 }).toList();
 
