@@ -145,3 +145,27 @@ class DeleteConversationView(APIView):
 
         conversation.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class DeleteMessageView(APIView):
+    def delete(self, request, conversation_id, message_id):
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != conversation.buyer and request.user != conversation.seller:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            message = Message.objects.get(id=message_id, conversation=conversation)
+        except Message.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if message.sender != request.user:
+            return Response(
+                {'error': 'You can only delete your own messages'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        message.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

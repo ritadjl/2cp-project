@@ -57,11 +57,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
+        reply_to_id = text_data_json.get('reply_to_id')
 
         msg = await Message.objects.acreate(
             conversation_id=self.conversation_id,
             sender=self.scope['user'],
-            content=message
+            content=message,
+            reply_to_id=reply_to_id
         )
 
         payload = {
@@ -71,7 +73,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "is_read": msg.is_read,
             "sender": {
                 "email": self.scope['user'].email
-            }
+            },
+            "reply_to": {
+                "id": str(msg.reply_to.id),
+                "content": msg.reply_to.content,
+                "sender_name": msg.reply_to.sender.full_name,
+            } if msg.reply_to else None
         }
 
         await self.channel_layer.group_send(

@@ -9,6 +9,7 @@ urlpatterns = [
     path('conversations/<int:conversation_id>/read/', views.MarkAsReadView.as_view()),
     # ── ADD THIS LINE ───────────────────────────────────────────────────
     path('conversations/<int:conversation_id>/delete/', views.DeleteConversationView.as_view()),
+    path('conversations/<int:conversation_id>/messages/<int:message_id>/delete/', views.DeleteMessageView.as_view()),
     # ────────────────────────────────────────────────────────────────────
     path('users/<str:user_id>/status/', views.UserStatusView.as_view()),
     path('devices/token/', views.SaveDeviceTokenView.as_view()),

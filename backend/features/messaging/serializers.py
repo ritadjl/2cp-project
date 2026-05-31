@@ -28,9 +28,20 @@ class UserSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
+    reply_to = serializers.SerializerMethodField()
+
+    def get_reply_to(self, obj):
+        if obj.reply_to:
+            return {
+                'id': str(obj.reply_to.id),
+                'content': obj.reply_to.content,
+                'sender_name': obj.reply_to.sender.full_name,
+            }
+        return None
+
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'content', 'timestamp', 'is_read']
+        fields = ['id', 'sender', 'content', 'timestamp', 'is_read', 'reply_to']
 
 
 class ConversationSerializer(serializers.ModelSerializer):
