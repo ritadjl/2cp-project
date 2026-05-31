@@ -11,6 +11,7 @@ from .models import Listing
 from .serializers import ListingReadSerializer, ListingWriteSerializer
 from .permissions import IsSellerOrReadOnly
 from features.authentication.models import Student
+from django.db import models
 
 
 class ListingListView(APIView):
@@ -91,12 +92,17 @@ class ListingMarkSoldView(APIView):
         self.check_object_permissions(request, listing)
         listing.status = Listing.Status.SOLD
         listing.save(update_fields=['status'])
+
+        # increment completed_sales on seller's profile
+        from features.accounts.models import Profile
+        Profile.objects.filter(student=listing.seller).update(
+            completed_sales=models.F('completed_sales') + 1
+        )
+
         return Response(
             {'message': 'Listing marked as sold.'},
             status=status.HTTP_200_OK
         )
-
-
 class MyListingsView(APIView):
     permission_classes = [IsAuthenticated]
 
