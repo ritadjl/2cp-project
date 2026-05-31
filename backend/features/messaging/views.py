@@ -173,3 +173,30 @@ class DeleteMessageView(APIView):
 
         message.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class SendImageMessageView(APIView):
+    def post(self, request, conversation_id):
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != conversation.buyer and request.user != conversation.seller:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        image = request.FILES.get('image')
+        if not image:
+            return Response({'error': 'image required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        msg = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content='',
+            image=image
+        )
+
+        return Response({
+            'id': str(msg.id),
+            'image_url': request.build_absolute_uri(msg.image.url),
+            'timestamp': str(msg.timestamp),
+        }, status=status.HTTP_201_CREATED)

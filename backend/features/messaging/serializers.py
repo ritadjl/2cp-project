@@ -30,6 +30,15 @@ class UserSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
     reply_to = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()  # ← ADD THIS
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
     def get_reply_to(self, obj):
         if obj.reply_to:
@@ -42,8 +51,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'content', 'timestamp', 'is_read', 'reply_to']
-
+        fields = ['id', 'sender', 'content', 'timestamp', 'is_read', 'reply_to', 'image_url']  # ← ADD image_url
 
 class ConversationSerializer(serializers.ModelSerializer):
     buyer = UserSerializer(read_only=True)

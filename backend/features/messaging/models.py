@@ -33,7 +33,8 @@ class Message(models.Model):
         on_delete=models.CASCADE, 
         related_name='sent_messages'
     )
-    content = models.TextField()
+    content = models.TextField(blank=True)  # ← make blank=True (image messages may have no text)
+    image = models.ImageField(upload_to='message_images/', null=True, blank=True)  # ← ADD THIS
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     reply_to = models.ForeignKey(  
@@ -51,3 +52,4 @@ class UserDevice(models.Model):
     )
     device_token = models.CharField(max_length=255)
     updated_at = models.DateTimeField(auto_now=True)
+
