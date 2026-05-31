@@ -13,43 +13,46 @@ class AuthService {
   static String accessToken = '';
   static String refreshToken = '';
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/login/'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'email': email, 'password': password}),
-  );
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    accessToken = data['access'];
-    ProfileApiService.token = data['access'];
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', data['access']);
-    await prefs.setString('refresh_token', data['refresh']);
-    refreshToken = data['refresh'];
-    final me = await getMe();
-    MsgService.currentUserId = me['id']?.toString() ?? '';
-    MsgService.currentUserEmail = me['email']?.toString() ?? '';
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/login/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      accessToken = data['access'];
+      ProfileApiService.token = data['access'];
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', data['access']);
+      await prefs.setString('refresh_token', data['refresh']);
+      refreshToken = data['refresh'];
+      final me = await getMe();
+      MsgService.currentUserId = me['id']?.toString() ?? '';
+      MsgService.currentUserEmail = me['email']?.toString() ?? '';
 
-    print('DEBUG currentUserEmail: ${MsgService.currentUserEmail}');
-    print('DEBUG currentUserId: ${MsgService.currentUserId}');
+      print('DEBUG currentUserEmail: ${MsgService.currentUserEmail}');
+      print('DEBUG currentUserId: ${MsgService.currentUserId}');
 
-    // ✅ FCM token
-    try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken != null) {
-        await MsgService.saveDeviceToken(accessToken, fcmToken);
-        print('✅ FCM token saved');
+      // ✅ FCM token
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await MsgService.saveDeviceToken(accessToken, fcmToken);
+          print('✅ FCM token saved');
+        }
+      } catch (e) {
+        print('❌ FCM token error: $e');
       }
-    } catch (e) {
-      print('❌ FCM token error: $e');
-    }
 
-    return data; // ✅ only one return, at the very end
-  } else {
-    throw Exception('Login failed');
+      return data; // ✅ only one return, at the very end
+    } else {
+      throw Exception('Login failed');
+    }
   }
-}
 
   static Future<List<dynamic>> getUniversities() async {
     final response = await http.get(Uri.parse('$baseUrl/universities/'));
@@ -62,7 +65,13 @@ class AuthService {
     }
   }
 
-  static Future<void> register(String email, String password, String fullName, String universityId, String phoneNumber) async {
+  static Future<void> register(
+    String email,
+    String password,
+    String fullName,
+    String universityId,
+    String phoneNumber,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/register/'),
       headers: {'Content-Type': 'application/json'},
@@ -74,7 +83,8 @@ class AuthService {
         'phone_number': phoneNumber,
       }),
     );
-    if (response.headers['content-type']?.contains('application/json') == true) {
+    if (response.headers['content-type']?.contains('application/json') ==
+        true) {
       final data = jsonDecode(response.body);
       print('Success: $data');
     } else {
@@ -112,6 +122,10 @@ class AuthService {
     MsgService.currentUserId = '';
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+    await prefs.remove('refresh_token');
+    await prefs.remove('saved_email');
+    await prefs.remove('saved_password');
+    await prefs.setBool('remember_me', false);
   }
 
   static Future<void> verifyEmail(String email, String code) async {
@@ -145,7 +159,11 @@ class AuthService {
     }
   }
 
-  static Future<void> resetPassword(String email, String code, String newPassword) async {
+  static Future<void> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/reset-password/'),
       headers: {'Content-Type': 'application/json'},
@@ -161,7 +179,8 @@ class AuthService {
   }
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '487741193559-9e1h8s176ahqaar9so7uapeliu3vrfq9.apps.googleusercontent.com',
+    serverClientId:
+        '487741193559-9e1h8s176ahqaar9so7uapeliu3vrfq9.apps.googleusercontent.com',
   );
 
   static Future<Map<String, dynamic>> signInWithGoogle() async {
@@ -204,7 +223,9 @@ class AuthService {
       body: jsonEncode({
         'id_token': credential.identityToken,
         'email': credential.email ?? '',
-        'full_name': '${credential.givenName ?? ''} ${credential.familyName ?? ''}'.trim(),
+        'full_name':
+            '${credential.givenName ?? ''} ${credential.familyName ?? ''}'
+                .trim(),
       }),
     );
     if (response.statusCode == 200) {
@@ -222,27 +243,27 @@ class AuthService {
       throw Exception('Apple login failed: ${response.body}');
     }
   }
+
   static Future<void> refreshAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     final refresh = prefs.getString('refresh_token') ?? refreshToken;
     if (refresh.isEmpty) return;
-    
+
     final response = await http.post(
-      Uri.parse('$baseUrl/refresh/'), 
+      Uri.parse('$baseUrl/refresh/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'refresh': refresh}),
-      );
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        accessToken = data['access'];
-        ProfileApiService.token = data['access'];
-        await prefs.setString('auth_token', data['access']);
-        } else {
-          accessToken = '';
-          await prefs.remove('auth_token');
-          await prefs.remove('refresh_token');
-          }
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      accessToken = data['access'];
+      ProfileApiService.token = data['access'];
+      await prefs.setString('auth_token', data['access']);
+    } else {
+      accessToken = '';
+      await prefs.remove('auth_token');
+      await prefs.remove('refresh_token');
+    }
   }
 }
-
