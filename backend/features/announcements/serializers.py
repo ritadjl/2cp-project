@@ -35,6 +35,7 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
     seller = serializers.CharField(source='student_full_name')
     seller_id = serializers.UUIDField(source='student_id')
+    seller_photo = serializers.SerializerMethodField()
     category = serializers.CharField(source='category.name')
     university = serializers.CharField(source='university.name', read_only=True)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=False)
@@ -44,7 +45,7 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = [
             'id', 'title', 'price', 'photo',
-            'seller', 'seller_id','category', 'created_at', 'university',
+            'seller', 'seller_id','seller_photo','category', 'created_at', 'university',
             'is_favorited'
         ]
 
@@ -66,6 +67,18 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
                return request.build_absolute_uri(first.image.url)  # ← full URL
            return first.image.url
        return None
+    def get_seller_photo(self, obj):
+        from features.authentication.models import Student
+        try:
+            student = Student.objects.get(user_id=obj.student_id)
+            if student.profile_picture:
+                request = self.context.get('request')
+                return request.build_absolute_uri(student.profile_picture.url) if request else student.profile_picture.url
+        except Student.DoesNotExist:
+            pass
+        return None
+    
+    
 
 
 class AnnouncementDetailSerializer(serializers.ModelSerializer):
