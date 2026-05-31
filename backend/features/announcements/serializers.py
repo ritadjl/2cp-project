@@ -69,13 +69,14 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
        return None
     def get_seller_photo(self, obj):
         from features.authentication.models import Student
-        student = Student.objects.filter(user_id=obj.student_id).first()
-        if student is None:
-            return "NO_STUDENT_FOUND"
-        if not student.profile_picture:
-            return "NO_PROFILE_PICTURE"
-        request = self.context.get('request')
-        return request.build_absolute_uri(student.profile_picture.url) if request else student.profile_picture.url
+        try:
+            student = Student.objects.filter(user_id=obj.student_id).first()
+            if student and student.profile_picture:
+                request = self.context.get('request')
+                return request.build_absolute_uri(student.profile_picture.url) if request else student.profile_picture.url
+        except Exception:
+            pass
+        return None
     
     
 
