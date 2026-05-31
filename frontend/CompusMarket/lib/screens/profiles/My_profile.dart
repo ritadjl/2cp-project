@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:compusmarket/screens/home/home_products_grid.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -39,7 +40,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   String? _avatarUrl;
 
-   File? _avatarImage;
+  File? _avatarImage;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -56,7 +57,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   void _onNewProduct() {
-   if (mounted) _loadAll();
+    if (mounted) _loadAll();
   }
 
   Future<void> _loadAll() async {
@@ -64,15 +65,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     try {
       // Fetch all data in parallel
       final results = await Future.wait([
-  ProfileApiService.getMyProfile(),
-   AuthService.getMe().catchError((_) => <String, dynamic>{}),
- AnnouncementService.getMyAnnouncements().catchError((e) {
-  print('❌ getMyAnnouncements error: $e');
-  return <dynamic>[];
-}),
-  ProfileApiService.getMyDeals().catchError((_) => <dynamic>[]),
-  AuthService.getUniversities().catchError((_) => <dynamic>[]),
-]);
+        ProfileApiService.getMyProfile(),
+        AuthService.getMe().catchError((_) => <String, dynamic>{}),
+        AnnouncementService.getMyAnnouncements().catchError((e) {
+          print('❌ getMyAnnouncements error: $e');
+          return <dynamic>[];
+        }),
+        ProfileApiService.getMyDeals().catchError((_) => <dynamic>[]),
+        AuthService.getUniversities().catchError((_) => <dynamic>[]),
+      ]);
 
       final profile = results[0] as Map<String, dynamic>;
       final authMe = results[1] as Map<String, dynamic>;
@@ -84,39 +85,44 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       debugPrint('PROFILE KEYS: ${profile.keys.toList()}');
       debugPrint('PROFILE DATA: $profile');
 
-     if (mounted) setState(() {
-        _userName = profile['full_name'] ?? profile['name'] ?? '';
-        _userEmail = authMe['email'] ?? '';
-        _userPhone = authMe['phone'] ?? profile['phone'] ?? '';
-        _userBio = profile['bio'] ?? '';
-        _userUniversityId = authMe['university']?['id']?.toString() ?? '';
-        _userUniversityName = authMe['university']?['name'] ?? '';
-        _notificationsEnabled = profile['notifications_enabled'] ?? false;
-        _showEmail = profile['show_email'] ?? false;
-        _myListings = listings;
-       
-        _itemsCount = listings.length;
-        _dealsCount = deals.length;
-        _averageRating = double.tryParse(
-              profile['average_rating']?.toString() ?? '0',
-            ) ??
-            0.0;
-        _universities = universities;
-         _avatarUrl = profile['avatar'] ?? authMe['profile_picture'];
-      });
+      if (mounted)
+        setState(() {
+          _userName = profile['full_name'] ?? profile['name'] ?? '';
+          _userEmail = authMe['email'] ?? '';
+          _userPhone = authMe['phone'] ?? profile['phone'] ?? '';
+          _userBio = profile['bio'] ?? '';
+          _userUniversityId = authMe['university']?['id']?.toString() ?? '';
+          _userUniversityName = authMe['university']?['name'] ?? '';
+          _notificationsEnabled = profile['notifications_enabled'] ?? false;
+          _showEmail = profile['show_email'] ?? false;
+          _myListings = listings;
+
+          _itemsCount = listings.length;
+          _dealsCount = deals.length;
+          _averageRating =
+              double.tryParse(profile['average_rating']?.toString() ?? '0') ??
+              0.0;
+          _universities = universities;
+          _avatarUrl = profile['avatar'] ?? authMe['profile_picture'];
+        });
     } catch (e) {
       debugPrint('Error loading profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load profile. Please try again.')),
+          const SnackBar(
+            content: Text('Failed to load profile. Please try again.'),
+          ),
         );
       }
     } finally {
-     if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _toggleNotifications(bool value, StateSetter setModalState) async {
+  Future<void> _toggleNotifications(
+    bool value,
+    StateSetter setModalState,
+  ) async {
     setModalState(() => _notificationsEnabled = value);
     setState(() => _notificationsEnabled = value);
     try {
@@ -148,30 +154,37 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
- Future<void> _handleLogout() async {
-  Navigator.pop(context); // close settings bottom sheet
-  try {
-    await AuthService.logout();
-  } catch (e) {
-    debugPrint('Logout error: $e'); // don't block navigation on error
-  }
+  Future<void> _handleLogout() async {
+    Navigator.pop(context); // close settings bottom sheet
 
-globalRealProductsNotifier.value = [];
+    // Clear credentials BEFORE navigating
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_email');
+    await prefs.remove('saved_password');
+    await prefs.setBool('remember_me', false);
 
-  // Always navigate to login regardless
-  if (mounted) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => SignInScreen()),
-      (route) => false,
-    );
+    try {
+      await AuthService.logout();
+    } catch (e) {
+      debugPrint('Logout error: $e');
+    }
+
+    globalRealProductsNotifier.value = [];
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => SignInScreen(key: UniqueKey())),
+        (route) => false,
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final visibleListings = _showAll ? _myListings : _myListings.take(2).toList();
+    final visibleListings = _showAll
+        ? _myListings
+        : _myListings.take(2).toList();
 
     return Scaffold(
       body: Container(
@@ -184,7 +197,9 @@ globalRealProductsNotifier.value = [];
           ),
         ),
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xff2853af)))
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xff2853af)),
+              )
             : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +208,9 @@ globalRealProductsNotifier.value = [];
 
                     // ── Title + Settings ──
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.06,
+                      ),
                       child: Row(
                         children: [
                           Text(
@@ -206,7 +223,10 @@ globalRealProductsNotifier.value = [];
                           const Spacer(),
                           IconButton(
                             onPressed: _openSettings,
-                            icon: Icon(Icons.settings_outlined, size: screenWidth * 0.075),
+                            icon: Icon(
+                              Icons.settings_outlined,
+                              size: screenWidth * 0.075,
+                            ),
                           ),
                         ],
                       ),
@@ -243,28 +263,28 @@ globalRealProductsNotifier.value = [];
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                
-                               if (_showEmail) ...[
-  SizedBox(height: screenHeight * 0.005),
-  Text(
-    _userEmail,
-    style: TextStyle(
-      color: const Color(0xff808897),
-      fontSize: screenWidth * 0.033,
-    ),
-  ),
-],
+
+                                if (_showEmail) ...[
                                   SizedBox(height: screenHeight * 0.005),
-                                   if (_userBio.isNotEmpty)
-                                   Text(
-                              _userBio,
-                              softWrap: true,
-                              style: TextStyle(
-                                color: const Color(0xff808897),
-                                fontSize: screenWidth * 0.035,
-                                height: 1.6,
-                              ),
-                            ),
+                                  Text(
+                                    _userEmail,
+                                    style: TextStyle(
+                                      color: const Color(0xff808897),
+                                      fontSize: screenWidth * 0.033,
+                                    ),
+                                  ),
+                                ],
+                                SizedBox(height: screenHeight * 0.005),
+                                if (_userBio.isNotEmpty)
+                                  Text(
+                                    _userBio,
+                                    softWrap: true,
+                                    style: TextStyle(
+                                      color: const Color(0xff808897),
+                                      fontSize: screenWidth * 0.035,
+                                      height: 1.6,
+                                    ),
+                                  ),
                                 SizedBox(height: screenHeight * 0.01),
                                 Container(
                                   height: screenHeight * 0.001,
@@ -300,29 +320,40 @@ globalRealProductsNotifier.value = [];
                         ),
 
                         // ── Avatar ──
-                       // In MyProfileScreen — replace the GestureDetector avatar with this simple version:
-Positioned(
-  top: 0,
-  child: Container(
-    width: 120,
-    height: 120,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.grey[400],
-      border: Border.all(color: Colors.white, width: 3),
-      boxShadow: const [
-        BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
-      ],
-    ),
-   child: ClipOval(
-  child: _avatarImage != null
-      ? Image.file(_avatarImage!, fit: BoxFit.cover)
-      : _avatarUrl != null
-          ? Image.network(_avatarUrl!, fit: BoxFit.cover)
-          : Icon(Icons.person, size: 60, color: Colors.grey[600]),
-),
-  ),
-),
+                        // In MyProfileScreen — replace the GestureDetector avatar with this simple version:
+                        Positioned(
+                          top: 0,
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey[400],
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: _avatarImage != null
+                                  ? Image.file(_avatarImage!, fit: BoxFit.cover)
+                                  : _avatarUrl != null
+                                  ? Image.network(
+                                      _avatarUrl!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: Colors.grey[600],
+                                    ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
 
@@ -357,11 +388,11 @@ Positioned(
                     //     ),
                     //   ),
 
-                   
-
                     // ── My Listings ──
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.06,
+                      ),
                       child: Text(
                         "My Listings",
                         style: TextStyle(
@@ -387,57 +418,81 @@ Positioned(
                       )
                     else
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.04,
+                        ),
                         child: GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           padding: EdgeInsets.zero,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: screenWidth * 0.03,
-                            mainAxisSpacing: screenWidth * 0.03,
-                            childAspectRatio: 0.75,
-                          ),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: screenWidth * 0.03,
+                                mainAxisSpacing: screenWidth * 0.03,
+                                childAspectRatio: 0.75,
+                              ),
                           itemCount: visibleListings.length,
                           itemBuilder: (context, index) {
                             final listing = visibleListings[index];
-                           
-                      
 
                             // ✅ strip " DA" and parse price correctly
-final rawPriceValue = listing['priceValue'];
-final rawPriceStr = listing['price']?.toString() ?? '0';
-final parsedPrice = rawPriceValue is num
-    ? rawPriceValue.toDouble()
-    : (double.tryParse(
-            rawPriceStr.replaceAll(RegExp(r'[^0-9.]'), '')) ??
-        0.0);
+                            final rawPriceValue = listing['priceValue'];
+                            final rawPriceStr =
+                                listing['price']?.toString() ?? '0';
+                            final parsedPrice = rawPriceValue is num
+                                ? rawPriceValue.toDouble()
+                                : (double.tryParse(
+                                        rawPriceStr.replaceAll(
+                                          RegExp(r'[^0-9.]'),
+                                          '',
+                                        ),
+                                      ) ??
+                                      0.0);
 
-final product = {
-  'name': listing['title'] ?? listing['name'] ?? '',
-  'price': rawPriceStr,         // keep original string e.g. "42444.00 DA"
-  'priceValue': parsedPrice,    // ✅ correct number e.g. 42444.0
-  'category': listing['category'] ?? '',
-  'rating': (listing['average_rating'] ?? listing['rating'] ?? 0.0).toDouble(),
-  'isRated': false,
-  'image': listing['image'] ??
-           listing['photos']?[0]?['image'] ??
-           'assets/images/products/airpods.jpg',
-  'isReal': true,
-  'isUserAdded': false,
-  'id': listing['id'],
-  'sellerId': listing['seller']?['id'],
-  'description': listing['description'] ?? '',
-  // ✅ these two were completely missing — university and location for edit mode
-  'location': listing['location']?.toString() ?? listing['university']?.toString() ?? '',
-  'university': listing['university']?.toString() ?? listing['location']?.toString() ?? '',
-  'images': listing['images'] ?? (listing['image'] != null ? [listing['image']] : []),
-  'status': listing['status'] ?? 'active',
-  'model': listing['model']?.toString() ?? '',  
-  'seller': listing['seller'] ?? '',
-  'seller_id': listing['seller_id']?.toString() ?? '',
-  'seller_avatar': listing['seller_avatar'],
-};
+                            final product = {
+                              'name': listing['title'] ?? listing['name'] ?? '',
+                              'price':
+                                  rawPriceStr, // keep original string e.g. "42444.00 DA"
+                              'priceValue':
+                                  parsedPrice, // ✅ correct number e.g. 42444.0
+                              'category': listing['category'] ?? '',
+                              'rating':
+                                  (listing['average_rating'] ??
+                                          listing['rating'] ??
+                                          0.0)
+                                      .toDouble(),
+                              'isRated': false,
+                              'image':
+                                  listing['image'] ??
+                                  listing['photos']?[0]?['image'] ??
+                                  'assets/images/products/airpods.jpg',
+                              'isReal': true,
+                              'isUserAdded': false,
+                              'id': listing['id'],
+                              'sellerId': listing['seller']?['id'],
+                              'description': listing['description'] ?? '',
+                              // ✅ these two were completely missing — university and location for edit mode
+                              'location':
+                                  listing['location']?.toString() ??
+                                  listing['university']?.toString() ??
+                                  '',
+                              'university':
+                                  listing['university']?.toString() ??
+                                  listing['location']?.toString() ??
+                                  '',
+                              'images':
+                                  listing['images'] ??
+                                  (listing['image'] != null
+                                      ? [listing['image']]
+                                      : []),
+                              'status': listing['status'] ?? 'active',
+                              'model': listing['model']?.toString() ?? '',
+                              'seller': listing['seller'] ?? '',
+                              'seller_id':
+                                  listing['seller_id']?.toString() ?? '',
+                              'seller_avatar': listing['seller_avatar'],
+                            };
 
                             return Container(
                               decoration: BoxDecoration(
@@ -452,33 +507,38 @@ final product = {
                                 ],
                               ),
                               child: ClipRRect(
-  borderRadius: BorderRadius.circular(16),
-  child: Stack(
-    children: [
-      ProductCard(
-        product: product,
-        isFavorite: false,
-        isRated: false,
-        onFavoriteToggle: () {},
-        onRatingToggle: () {},
-        onEdit: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddNewProductScreen(product: product),
-            ),
-          );
-        },
-      ),
-      if ((product['status'] ?? 'active') != 'active')
-        Positioned(
-          top: 8,
-          left: 8,
-          child: StatusBadge(status: product['status'] ?? ''),
-        ),
-    ],
-  ),
-),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Stack(
+                                  children: [
+                                    ProductCard(
+                                      product: product,
+                                      isFavorite: false,
+                                      isRated: false,
+                                      onFavoriteToggle: () {},
+                                      onRatingToggle: () {},
+                                      onEdit: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => AddNewProductScreen(
+                                              product: product,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    if ((product['status'] ?? 'active') !=
+                                        'active')
+                                      Positioned(
+                                        top: 8,
+                                        left: 8,
+                                        child: StatusBadge(
+                                          status: product['status'] ?? '',
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -543,41 +603,50 @@ final product = {
 
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
-                    title: const Text("Edit Profile",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    trailing: Text(">", style: TextStyle(fontSize: screenWidth * 0.04)),
+                    title: const Text(
+                      "Edit Profile",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    trailing: Text(
+                      ">",
+                      style: TextStyle(fontSize: screenWidth * 0.04),
+                    ),
                     // ✅ Replace with this:
-onTap: () async {
-  Navigator.pop(context);
-  final result = await Navigator.push<Map<String, dynamic>>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => EditProfileScreen(
-        name: _userName,
-        email: _userEmail,
-        phone: _userPhone,
-        bio: _userBio,
-        universityId: _userUniversityId,
-        universities: _universities,
-      ),
-    ),
-  );
-  if (result?['updated'] == true) {
-    if (result?['avatar'] != null) {
-      setState(() => _avatarImage = result!['avatar'] as File);
-    } else {
-      setState(() => _avatarImage = null);
-    }
-    _loadAll();
-  }
-},
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final result = await Navigator.push<Map<String, dynamic>>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfileScreen(
+                            name: _userName,
+                            email: _userEmail,
+                            phone: _userPhone,
+                            bio: _userBio,
+                            universityId: _userUniversityId,
+                            universities: _universities,
+                          ),
+                        ),
+                      );
+                      if (result?['updated'] == true) {
+                        if (result?['avatar'] != null) {
+                          setState(
+                            () => _avatarImage = result!['avatar'] as File,
+                          );
+                        } else {
+                          setState(() => _avatarImage = null);
+                        }
+                        _loadAll();
+                      }
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xffdfe1e6)),
 
                   SwitchListTile(
                     secondary: const Icon(Icons.notifications_outlined),
-                    title: const Text("Notifications",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: const Text(
+                      "Notifications",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     value: _notificationsEnabled,
                     activeThumbColor: const Color(0xff2853af),
                     onChanged: (v) => _toggleNotifications(v, setModalState),
@@ -586,8 +655,10 @@ onTap: () async {
 
                   SwitchListTile(
                     secondary: const Icon(Icons.email_outlined),
-                    title: const Text("Show Email",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: const Text(
+                      "Show Email",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     value: _showEmail,
                     activeThumbColor: const Color(0xff2853af),
                     onChanged: (v) => _toggleShowEmail(v, setModalState),
@@ -596,7 +667,10 @@ onTap: () async {
 
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text("Logout", style: TextStyle(color: Colors.red)),
+                    title: const Text(
+                      "Logout",
+                      style: TextStyle(color: Colors.red),
+                    ),
                     onTap: _handleLogout,
                   ),
                 ],
@@ -611,20 +685,24 @@ onTap: () async {
   Widget _statItem(String label, String value) {
     return Column(
       children: [
-        Text(value,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Colors.black,
-            )),
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.black,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 13,
-              color: Color(0xff808897),
-            )),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            color: Color(0xff808897),
+          ),
+        ),
       ],
     );
   }
@@ -638,75 +716,77 @@ onTap: () async {
     );
   }
 
-
   void _showAvatarPickerSheet() {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildPickerOption(
-                icon: Icons.camera_alt,
-                label: 'Camera',
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAvatar(ImageSource.camera);
-                },
-              ),
-              _buildPickerOption(
-                icon: Icons.photo_library,
-                label: 'Gallery',
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAvatar(ImageSource.gallery);
-                },
-              ),
-            ],
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildPickerOption(
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickAvatar(ImageSource.camera);
+                  },
+                ),
+                _buildPickerOption(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickAvatar(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
-
-Future<void> _pickAvatar(ImageSource source) async {
-  final XFile? picked = await _picker.pickImage(source: source, imageQuality: 80);
-  if (picked != null && mounted) {
-    setState(() => _avatarImage = File(picked.path));
-    // TODO: upload to backend
-    // await ProfileApiService.updateAvatar(File(picked.path));
+        );
+      },
+    );
   }
-}
 
-Widget _buildPickerOption({
-  required IconData icon,
-  required String label,
-  required VoidCallback onTap,
-}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            shape: BoxShape.circle,
+  Future<void> _pickAvatar(ImageSource source) async {
+    final XFile? picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+    );
+    if (picked != null && mounted) {
+      setState(() => _avatarImage = File(picked.path));
+      // TODO: upload to backend
+      // await ProfileApiService.updateAvatar(File(picked.path));
+    }
+  }
+
+  Widget _buildPickerOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.blue, size: 30),
           ),
-          child: Icon(icon, color: Colors.blue, size: 30),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
 }

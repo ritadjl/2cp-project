@@ -29,22 +29,22 @@ class Conversation(models.Model):
 class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='sent_messages'
     )
-    content = models.TextField(blank=True)  # ← make blank=True (image messages may have no text)
-    image = models.ImageField(upload_to='message_images/', null=True, blank=True)  # ← ADD THIS
+    content = models.TextField(blank=True)  # ← make blank=True so image-only messages work
+    image = models.ImageField(upload_to='messages/images/%Y/%m/%d/', null=True, blank=True)  # ← ADD
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-    reply_to = models.ForeignKey(  
+    reply_to = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='replies'
-     )# ← ADD THIS
-
+    )
+    
 class UserDevice(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, 
