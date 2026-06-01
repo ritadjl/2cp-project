@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:compusmarket/services/auth_services.dart';
 import 'package:http/http.dart' as http;
 
 class MsgService {
@@ -57,8 +58,13 @@ static Future<void> saveDeviceToken(String token, String fcmToken) async {
   );
 }
 
-  static String wsUrl(int conversationId, String token) =>
-      '$wsBase/chat/$conversationId/?token=$token';
+  // ✅ Fixed — use Uri constructor, not Uri.parse()
+static Uri wsUri(int conversationId, String token) => Uri(
+  scheme: 'wss',
+  host: 'twocp-project-1-gtam.onrender.com',
+  path: '/ws/chat/$conversationId/',
+  queryParameters: {'token': token},
+);
      static Future<Map<String, dynamic>> getOrCreateConversation(
   String token,
   String sellerId,

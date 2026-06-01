@@ -29,14 +29,10 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
       if (!mounted) return;
       setState(() {
         conversations = data;
-       if (data.isNotEmpty) {
-    print('🟢 conv keys: ${(data[0] as Map).keys.toList()}');
-    print('🟢 is_online value: ${data[0]['is_online']}');
-    print('🟢 other_user_online: ${data[0]['other_user_online']}');
-  }
-  print('💬 CONV SAMPLE: ${data.isNotEmpty ? data[0] : "empty"}');
-  isLoading = false;
-});
+        
+        print('💬 CONV SAMPLE: ${data.isNotEmpty ? data[0] : "empty"}');
+        isLoading = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -84,16 +80,10 @@ class _ChatsOutScreenState extends State<ChatsOutScreen> {
         otherUser['is_online'] == true;
   }
 
-  bool _isLastMessageFromMe(Map<String, dynamic> conv) {
-    if (conv.containsKey('last_message_is_mine')) {
-      return conv['last_message_is_mine'] == true;
-    }
+ bool _isLastMessageFromMe(Map<String, dynamic> conv) {
     final senderId = conv['last_message_sender_id']?.toString() ?? '';
-    if (senderId.isNotEmpty) {
-      return senderId == MsgService.currentUserId;
-    }
-    return (conv['unread_count'] ?? 0) == 0 &&
-        (conv['last_message'] ?? '').toString().isNotEmpty;
+    if (senderId.isEmpty) return false;
+    return senderId == MsgService.currentUserId;
   }
 
   bool _isLastMessageRead(Map<String, dynamic> conv) {
