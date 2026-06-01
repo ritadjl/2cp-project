@@ -66,6 +66,7 @@ class _AddNewProductScreenState extends State<AddNewProductScreen> {
       _modelController.text = p['model']?.toString() ?? '';
       _descriptionController.text = p['description'] ?? '';
       _selectedStatus = p['status']?.toString() ?? 'active';
+
       //_isReserved = p['status'] == 'reserved';
 
       // ✅ category: match case-insensitively against _types list
@@ -241,6 +242,7 @@ class _AddNewProductScreenState extends State<AddNewProductScreen> {
         final id = int.tryParse(widget.product!['id'].toString()) ?? 0;
 
         await AnnouncementService.updateAnnouncement(
+
   id,
   {
     'title': _nameController.text.trim(),

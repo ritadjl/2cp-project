@@ -29,6 +29,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int selectedImageIndex = 0;
   late List<String> galleryImages;
 
+
   @override
   void initState() {
     super.initState();

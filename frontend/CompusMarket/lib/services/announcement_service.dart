@@ -254,16 +254,5 @@ static Future<void> reportAnnouncement(int announcementId, String reason) async 
   }
 }
 
-/// Delete announcement
-static Future<void> deleteAnnouncement(int id) async {
-  final response = await http.delete(
-    Uri.parse('${ApiConfig.baseUrl}/announcements/$id/archive/'),
-    headers: await ApiConfig.getHeaders(),
-  );
-  if (response.statusCode != 200 && response.statusCode != 204) {
-    throw Exception('Failed to delete announcement: ${response.body}');
-  }
-}
-
 
 }
