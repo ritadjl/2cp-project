@@ -258,9 +258,6 @@ class _AddNewProductScreenState extends State<AddNewProductScreen> {
       : null,
 );
 await AnnouncementService.changeStatus(id, _selectedStatus);
-// ✅ No markListingAsSold — backend handles completed_sales in changeStatus
-         await AnnouncementService.changeStatus(id, _selectedStatus);
-
 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -469,6 +466,7 @@ await AnnouncementService.changeStatus(id, _selectedStatus);
         isExpanded: true,
         items: const [
           DropdownMenuItem(value: 'active', child: Row(children: [Icon(Icons.check_circle, color: Colors.green, size: 18), SizedBox(width: 8), Text('Active')])),
+           DropdownMenuItem(value: 'reserved', child: Row(children: [Icon(Icons.bookmark, color: Colors.orange, size: 18), SizedBox(width: 8), Text('Reserved')])), 
           DropdownMenuItem(value: 'sold',   child: Row(children: [Icon(Icons.sell,          color: Color(0xff2853af), size: 18), SizedBox(width: 8), Text('Sold')])),
           DropdownMenuItem(value: 'expired',child: Row(children: [Icon(Icons.timer_off,     color: Colors.orange, size: 18), SizedBox(width: 8), Text('Expired')])),
         ],

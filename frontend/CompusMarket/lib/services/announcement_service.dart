@@ -258,5 +258,15 @@ static Future<void> deleteAnnouncement(int id) async {
   await archiveAnnouncement(id);
 }
 
+static Future<void> markAsSold(int id) async {
+  final response = await http.patch(
+    Uri.parse('${ApiConfig.baseUrl}/listings/$id/mark-sold/'),
+    headers: await ApiConfig.getHeaders(),
+  );
+  if (response.statusCode != 200) {
+    throw Exception('Failed to mark as sold: ${response.body}');
+  }
+}
+
 
 }

@@ -452,18 +452,41 @@ class ProductCard extends StatelessWidget {
   }
 }
 
+// ❌ REPLACE THE ENTIRE StatusBadge class with this:
 class StatusBadge extends StatelessWidget {
   final String status;
-  const StatusBadge({required this.status});
+  const StatusBadge({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final isSold = status == 'sold';
-    final label = isSold ? 'SOLD' : 'EXPIRED';
+    Color color;
+    IconData icon;
+    String label;
+
+    switch (status) {
+      case 'sold':
+        color = const Color(0xff2853af);
+        icon = Icons.sell;
+        label = 'SOLD';
+        break;
+      case 'reserved':
+        color = Colors.orange;
+        icon = Icons.bookmark;
+        label = 'RESERVED';
+        break;
+      case 'expired':
+        color = Colors.red;
+        icon = Icons.timer_off;
+        label = 'EXPIRED';
+        break;
+      default:
+        return const SizedBox.shrink(); // ✅ hide for active
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xff2853af),
+        color: color,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4),
@@ -472,11 +495,7 @@ class StatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isSold ? Icons.sell : Icons.timer_off,
-            color: Colors.white,
-            size: 12,
-          ),
+          Icon(icon, color: Colors.white, size: 12),
           const SizedBox(width: 4),
           Text(
             label,

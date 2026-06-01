@@ -9,6 +9,7 @@ import '../../services/favorite_service.dart';
 import '../chats/chat_in.dart';
 import '../profiles/His_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:compusmarket/screens/home/add_new_product.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -749,33 +750,45 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
 
                 // Favorite button
-                Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: GestureDetector(
-                    onTap: _toggleFavorite,
-                    child: Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: isFavorite ? Colors.red : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
+                // ✅ REPLACE WITH
+Positioned(
+  bottom: 16,
+  right: 16,
+  child: GestureDetector(
+    onTap: _isOwnProduct
+        ? () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddNewProductScreen(product: widget.product),
+              ),
+            );
+          }
+        : _toggleFavorite,
+    child: Container(
+      width: 45,
+      height: 45,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 5,
+          ),
+        ],
+      ),
+      child: Icon(
+        _isOwnProduct
+            ? Icons.edit_outlined
+            : (isFavorite ? Icons.favorite : Icons.favorite_border),
+        color: _isOwnProduct
+            ? const Color(0xff2853af)
+            : (isFavorite ? Colors.red : Colors.grey),
+      ),
+    ),
+  ),
+),
               ],
             ),
 
