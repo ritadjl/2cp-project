@@ -9,7 +9,7 @@ class AnnouncementService {
     int page = 1,
     String? search,
     int? categoryId,
-    int? universityId,
+    String? universityId,
     double? minPrice,
     double? maxPrice,
   }) async {

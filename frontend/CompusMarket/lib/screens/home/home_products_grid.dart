@@ -12,46 +12,6 @@ List<Map<String, dynamic>> globalRatedProducts = [];
 final ValueNotifier<List<Map<String, dynamic>>> globalRealProductsNotifier =
     ValueNotifier([]);
 
-// ── 15 FIXED FAKE PRODUCTS ──
-const List<Map<String, dynamic>> _fakeProducts = [
-  {
-    'name': 'AirPods',
-    'price': '4500.00 DA',
-    'priceValue': 4500.00,
-    'category': 'Electronics',
-    'rating': 4.5,
-    'isRated': false,
-    'image': 'assets/images/products/airpods.jpg',
-  },
-  {
-    'name': 'Apple Watch',
-    'price': '15500.00 DA',
-    'priceValue': 15500.00,
-    'category': 'Electronics',
-    'rating': 3.5,
-    'isRated': false,
-    'image': 'assets/images/products/applewatch.jpg',
-  },
-  {
-    'name': 'Bike',
-    'price': '22500.00 DA',
-    'priceValue': 22500.00,
-    'category': 'Accessories',
-    'rating': 4.0,
-    'isRated': false,
-    'image': 'assets/images/products/bike.jpg',
-  },
-  {
-    'name': 'Black Airpods',
-    'price': '2500.00 DA',
-    'priceValue': 2500.00,
-    'category': 'Electronics',
-    'rating': 3.5,
-    'isRated': false,
-    'image': 'assets/images/products/blackairpods.jpg',
-  },
-];
-
 class HomeProductsGrid extends StatefulWidget {
   const HomeProductsGrid({super.key});
   @override
@@ -94,30 +54,37 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
         maxPrice: filter.priceRange.end < 1000000
             ? filter.priceRange.end
             : null,
+        // ── Pass the selected university UUID string to the backend API: ──
+        universityId: filter.selectedUniversities.isNotEmpty
+            ? filter.selectedUniversities.first
+            : null,
       );
+
       final List results = data['results'] ?? [];
       final real = results.take(5).map((item) {
-  print('DEBUG item: id=${item['id']}, seller=${item['seller']}, seller_id=${item['seller_id']}');
-  if (results.isNotEmpty) {
-  debugPrint('FIRST PRODUCT API DATA: ${results[0]}');
-}
-  return {
-    'id': item['id'],
-    'name': item['title'] ?? '',
-    'price': '${item['price']} DA',
-    'priceValue': double.tryParse(item['price'].toString()) ?? 0.0,
-    'category': item['category'] ?? '',
-    'rating': (item['average_rating'] ?? 0.0).toDouble(),
-    'isRated': false,
-    'image': item['photo'] ?? '',
-    'isReal': true,
-    'seller': item['seller'] ?? '',
-    'seller_id': item['seller_id']?.toString() ?? '',  // 👈 add this
-    'university': item['university'] ?? '',
-    'photos': item['photos'],
-    'status': item['status']?.toString() ?? 'active',
-  };
-}).toList();
+        print(
+          'DEBUG item: id=${item['id']}, seller=${item['seller']}, seller_id=${item['seller_id']}',
+        );
+        if (results.isNotEmpty) {
+          debugPrint('FIRST PRODUCT API DATA: ${results[0]}');
+        }
+        return {
+          'id': item['id'],
+          'name': item['title'] ?? '',
+          'price': '${item['price']} DA',
+          'priceValue': double.tryParse(item['price'].toString()) ?? 0.0,
+          'category': item['category'] ?? '',
+          'rating': (item['average_rating'] ?? 0.0).toDouble(),
+          'isRated': false,
+          'image': item['photo'] ?? '',
+          'isReal': true,
+          'seller': item['seller'] ?? '',
+          'seller_id': item['seller_id']?.toString() ?? '', // 👈 add this
+          'university': item['university'] ?? '',
+          'photos': item['photos'],
+          'status': item['status']?.toString() ?? 'active',
+        };
+      }).toList();
 
       if (mounted) {
         setState(() {
@@ -139,13 +106,12 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
         final List<Map<String, dynamic>> allProducts = [
           ...userProducts,
           ..._realProducts,
-          ..._fakeProducts,
         ];
 
         return ValueListenableBuilder<FilterData>(
           valueListenable: globalFilterState,
           builder: (context, filter, child) {
-            final filteredProducts = allProducts.where((product) {
+                               final filteredProducts = allProducts.where((product) {
               if (filter.searchQuery.isNotEmpty) {
                 final String productName = product['name'].toLowerCase();
                 final String query = filter.searchQuery.toLowerCase();
@@ -159,13 +125,17 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
                   !filter.selectedCategories.contains(product['category'])) {
                 return false;
               }
+              
+              // ── Price range check ──
               final double price = product['priceValue'] as double;
               if (price < filter.priceRange.start ||
                   price > filter.priceRange.end) {
                 return false;
               }
-              return true;
+              
+              return true; // ── Allow the product to be displayed ──
             }).toList();
+
 
             if (filteredProducts.isEmpty) {
               return Padding(
