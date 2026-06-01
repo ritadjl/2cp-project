@@ -1,4 +1,3 @@
-
 {% extends "admin/base.html" %}
 {% load static %}
 
@@ -15,11 +14,137 @@
 {% block extrastyle %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+  <style>
+    /* ── SIDEBAR BRAND → bleu foncé ── */
+    .sidebar-brand,
+    .app-sidebar .sidebar-brand {
+      background-color: #042C53 !important;
+    }
+
+    /* ── NAVBAR → bleu foncé ── */
+    nav.app-header.navbar.navbar-white.navbar-light,
+    nav.app-header.navbar,
+    .app-header.bg-body {
+      background-color: #042C53 !important;
+      --bs-body-bg: #042C53 !important;
+      --bs-tertiary-bg: #042C53 !important;
+    }
+
+    /* Textes navbar → blancs */
+    nav.app-header.navbar *,
+    nav.app-header.navbar .nav-link,
+    nav.app-header.navbar .nav-link i {
+      color: rgba(255,255,255,0.85) !important;
+    }
+    nav.app-header.navbar .nav-link:hover { color: #ffffff !important; }
+
+    /* ══════════════════════════════════════════════════
+       NAVBAR — select2 recherche → transparent sur bleu
+    ══════════════════════════════════════════════════ */
+    .app-header .select2-container--default .select2-selection--single {
+      background-color: rgba(255,255,255,0.15) !important;
+      border: 1px solid rgba(255,255,255,0.3) !important;
+      border-radius: 8px !important;
+    }
+    .app-header .select2-container--default .select2-selection--single .select2-selection__rendered {
+      color: rgba(255,255,255,0.85) !important;
+    }
+    .app-header .select2-container--default .select2-selection__placeholder {
+      color: rgba(255,255,255,0.6) !important;
+    }
+    .app-header .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      border-color: rgba(255,255,255,0.6) transparent transparent transparent !important;
+    }
+
+    /* ══════════════════════════════════════════════════
+       FILTRES CHANGELIST — select2 → fond blanc propre
+    ══════════════════════════════════════════════════ */
+    #changelist .select2-container--default .select2-selection--single,
+    .change-list .select2-container--default .select2-selection--single {
+      background-color: #ffffff !important;
+      border: 1px solid #E2E8F0 !important;
+      border-radius: 8px !important;
+    }
+    #changelist .select2-container--default .select2-selection--single .select2-selection__rendered,
+    .change-list .select2-container--default .select2-selection--single .select2-selection__rendered {
+      color: #1A2535 !important;
+      line-height: 28px !important;
+      padding-left: 10px !important;
+    }
+    #changelist .select2-container--default .select2-selection--single .select2-selection__arrow b,
+    .change-list .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      border-color: #6B7A90 transparent transparent transparent !important;
+    }
+
+    /* ══════════════════════════════════════════════════
+       DROPDOWN SELECT2 — fond blanc pour tous
+    ══════════════════════════════════════════════════ */
+    .select2-dropdown {
+      background-color: #ffffff !important;
+      border: 1px solid #E2E8F0 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+    }
+    .select2-results__option {
+      background-color: #ffffff !important;
+      color: #1A2535 !important;
+      font-size: 13px !important;
+    }
+    .select2-results__option--highlighted,
+    .select2-results__option--highlighted[aria-selected] {
+      background-color: #3076E0 !important;
+      color: #ffffff !important;
+    }
+    .select2-results__option[aria-selected="true"] {
+      background-color: #E6F1FB !important;
+      color: #3076E0 !important;
+    }
+    .select2-search--dropdown .select2-search__field {
+      background-color: #F4F7FC !important;
+      border: 1px solid #E2E8F0 !important;
+      color: #1A2535 !important;
+      border-radius: 6px !important;
+    }
+
+    /* ══════════════════════════════════════════════════
+       BOUTON ACTION (dropdown bas gauche)
+    ══════════════════════════════════════════════════ */
+    html[data-bs-theme="dark"] #changelist select,
+    html[data-bs-theme="dark"] .actions select {
+      background-color: #ffffff !important;
+      color: #1A2535 !important;
+      border: 1px solid #E2E8F0 !important;
+      border-radius: 8px !important;
+      
+
+  /* ── BOUTON LOUPE NAVBAR → transparent sur bleu ── */
+nav.app-header .btn-navbar,
+nav.app-header.navbar .btn-navbar,
+#jazzy-navbar .btn-navbar,
+.app-header .btn.btn-navbar {
+  background-color: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.25) !important;
+  color: rgba(255,255,255,0.85) !important;
+  box-shadow: none !important;
+}
+nav.app-header .btn-navbar:hover,
+#jazzy-navbar .btn-navbar:hover {
+  background-color: rgba(255,255,255,0.25) !important;
+  color: #ffffff !important;
+}
+}  
+    /* Force absolu sur le bouton loupe navbar */
+html body nav.app-header.navbar button.btn.btn-navbar[type="submit"] {
+  background-color: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.25) !important;
+  color: rgba(255,255,255,0.85) !important;
+  box-shadow: none !important;
+}
+  </style>
 {% endblock %}
 
 {% block footer %}
 <div id="footer">
   <p>CompusMarket Administration &mdash; École Nationale Supérieure d'Informatique</p>
 </div>
-{% endblock %}  
-```
+{% endblock %}

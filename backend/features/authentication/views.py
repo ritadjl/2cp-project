@@ -332,7 +332,7 @@ class UserProfileView(APIView):
         return Response(data)
 
 
-class LoginView(APIView):  # ← désimbriquée, au même niveau que UserProfileView
+class LoginView(APIView):  
     permission_classes = [AllowAny]
 
     def post(self, request):

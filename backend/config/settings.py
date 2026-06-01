@@ -86,14 +86,13 @@ JAZZMIN_SETTINGS = {
     # ── Liens top menu ────────────────────────────────────────────
     "topmenu_links": [
         {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Voir le site", "url": "/", "new_window": True},
     ],
 
     # ── Menu utilisateur (avatar top-right) ───────────────────────
     "usermenu_links": [
         {
             "name":  "Mon profil",
-            "url":   "admin:authentication_user_change",
+            "url":   "/admin/",
             "icon":  "fas fa-user",
         },
     ],
@@ -187,8 +186,8 @@ JAZZMIN_UI_TWEAKS = {
     "footer_fixed":     False,
     "sidebar_fixed":    True,
 
-    # Sidebar sombre bleue (couleur via CSS)
-    "sidebar":                    "sidebar-dark-primary",
+    
+    "sidebar":                    "sidebar-primary",
     "sidebar_nav_small_text":     False,
     "sidebar_disable_expand":     False,
     "sidebar_nav_child_indent":   True,

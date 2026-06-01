@@ -22,9 +22,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   List<String> _selectedCategories = [];
 
   // Universities Data
-  List<String> _universities = [];
+  List<Map<String, dynamic>> _universities =
+      []; // Stores full objects {id, name}
   bool _isLoadingUniversities = true;
-  List<String> _selectedUniversities = [];
+  List<String> _selectedUniversities = []; // Stores IDs of selected universities
 
   // Price Range Data
   RangeValues _priceRange = const RangeValues(0, 1000000);
@@ -45,7 +46,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       if (mounted) {
         setState(() {
           _universities = uniList.map((dynamic u) {
-            return (u is Map && u.containsKey('name')) ? u['name'].toString() : u.toString();
+            if (u is Map) {
+              return Map<String, dynamic>.from(u);
+            } else {
+              return {'id': 0, 'name': u.toString()};
+            }
           }).toList();
           _isLoadingUniversities = false;
         });
@@ -64,7 +69,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   Widget _buildFilterChips(List<String> items, List<String> selectedItems) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: 8.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: 8.0,
+      ),
       child: Wrap(
         spacing: screenWidth * 0.02,
         runSpacing: screenWidth * 0.02,
@@ -88,9 +96,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2F2F2), // Grey background always
-                borderRadius: BorderRadius.circular(screenWidth * 0.05), // Oval shape
+                borderRadius: BorderRadius.circular(
+                  screenWidth * 0.05,
+                ), // Oval shape
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF1A73E8) : Colors.transparent, // Blue border if selected
+                  color: isSelected
+                      ? const Color(0xFF1A73E8)
+                      : Colors.transparent, // Blue border if selected
                   width: 2.0,
                 ),
               ),
@@ -108,6 +120,60 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       ),
     );
   }
+
+  // ── INSERT IT HERE (Line 123) ──
+    Widget _buildUniversityChips() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: 8.0),
+      child: Wrap(
+        spacing: screenWidth * 0.02,
+        runSpacing: screenWidth * 0.02,
+        children: _universities.map((uni) {
+          final String id = uni['id'].toString(); // ── CHANGE THIS to read directly as String ──
+          final String name = uni['name'].toString();
+          final isSelected = _selectedUniversities.contains(id);
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  _selectedUniversities.remove(id);
+                } else {
+                  _selectedUniversities.add(id);
+                }
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04,
+                vertical: screenWidth * 0.02,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F2),
+                borderRadius: BorderRadius.circular(screenWidth * 0.05),
+                border: Border.all(
+                  color: isSelected ? const Color(0xFF1A73E8) : Colors.transparent,
+                  width: 2.0,
+                ),
+              ),
+              child: Text(
+                name,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF1A73E8) : Colors.black87,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: screenWidth * 0.035,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +193,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         children: [
           // ── HEADER ──
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.02),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.04,
+              vertical: screenHeight * 0.02,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -154,7 +223,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               children: [
                 // ── CATEGORIES ──
                 Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent), // Remove ExpansionTile border
+                  data: Theme.of(context).copyWith(
+                    dividerColor: Colors.transparent,
+                  ), // Remove ExpansionTile border
                   child: ExpansionTile(
                     title: Text(
                       'Category',
@@ -173,7 +244,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
                 // ── UNIVERSITIES ──
                 Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     title: Text(
                       'Universities',
@@ -195,17 +268,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           child: Text('No universities found.'),
                         )
                       else
-                        _buildFilterChips(_universities, _selectedUniversities),
-                    ],
+_buildUniversityChips(),                     ],
                   ),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
 
                 // ── PRICE RANGE ──
                 Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
-                    initiallyExpanded: true, // often helpful to show price right away
+                    initiallyExpanded:
+                        true, // often helpful to show price right away
                     title: Text(
                       'Price',
                       style: TextStyle(
@@ -216,7 +291,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
                     children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: 8.0),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.04,
+                          vertical: 8.0,
+                        ),
                         child: Column(
                           children: [
                             SliderTheme(
@@ -225,24 +303,27 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 inactiveTrackColor: Colors.grey[300],
                                 thumbColor: Colors.white,
                                 // To make thumbs look like standard circles with borders like the image
-                                rangeThumbShape: const RoundRangeSliderThumbShape(
-                                  enabledThumbRadius: 10,
-                                  elevation: 4,
-                                  pressedElevation: 6,
-                                ),
-                                overlayColor: const Color(0xFF1A73E8).withOpacity(0.2),
+                                rangeThumbShape:
+                                    const RoundRangeSliderThumbShape(
+                                      enabledThumbRadius: 10,
+                                      elevation: 4,
+                                      pressedElevation: 6,
+                                    ),
+                                overlayColor: const Color(
+                                  0xFF1A73E8,
+                                ).withOpacity(0.2),
                               ),
-                                child: RangeSlider(
-                                  values: _priceRange,
-                                  min: 0,
-                                  max: 1000000,
-                                  divisions: 1000,
-                                  onChanged: (RangeValues values) {
-                                    setState(() {
-                                      _priceRange = values;
-                                    });
-                                  },
-                                ),
+                              child: RangeSlider(
+                                values: _priceRange,
+                                min: 0,
+                                max: 1000000,
+                                divisions: 1000,
+                                onChanged: (RangeValues values) {
+                                  setState(() {
+                                    _priceRange = values;
+                                  });
+                                },
+                              ),
                             ),
                             SizedBox(height: screenHeight * 0.01),
                             // Price Labels
@@ -252,11 +333,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 // Min Price Box
                                 Expanded(
                                   child: Container(
-                                    padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: screenHeight * 0.015,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                                      border: Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(
+                                        screenWidth * 0.03,
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.grey[300]!,
+                                      ),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -270,7 +357,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                   ),
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: screenWidth * 0.03,
+                                  ),
                                   child: Text(
                                     '-',
                                     style: TextStyle(
@@ -283,11 +372,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 // Max Price Box
                                 Expanded(
                                   child: Container(
-                                    padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: screenHeight * 0.015,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                                      border: Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(
+                                        screenWidth * 0.03,
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.grey[300]!,
+                                      ),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -337,14 +432,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         _selectedUniversities.clear();
                         _priceRange = const RangeValues(0, 1000000);
                       });
-                      globalFilterState.value = globalFilterState.value.copyWith(
-                        selectedCategories: [],
-                        selectedUniversities: [],
-                        priceRange: const RangeValues(0, 1000000),
-                      );
+                      globalFilterState.value = globalFilterState.value
+                          .copyWith(
+                            selectedCategories: [],
+                            selectedUniversities: [],
+                            priceRange: const RangeValues(0, 1000000),
+                          );
                     },
                     style: TextButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                      padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.02,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(screenWidth * 0.03),
                         side: BorderSide(color: Colors.grey[300]!),
@@ -366,16 +464,21 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   child: ElevatedButton(
                     onPressed: () {
                       // Apply Filter action here
-                      globalFilterState.value = globalFilterState.value.copyWith(
-                        selectedCategories: List.from(_selectedCategories),
-                        selectedUniversities: List.from(_selectedUniversities),
-                        priceRange: _priceRange,
-                      );
+                      globalFilterState.value = globalFilterState.value
+                          .copyWith(
+                            selectedCategories: List.from(_selectedCategories),
+                            selectedUniversities: List.from(
+                              _selectedUniversities,
+                            ),
+                            priceRange: _priceRange,
+                          );
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1A73E8),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                      padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.02,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(screenWidth * 0.03),
                       ),
