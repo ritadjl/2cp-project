@@ -55,8 +55,11 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
     _wakeServerThenConnect();
   }
 
+  bool _isDisposed = false; 
+
   @override
   void dispose() {
+    _isDisposed = true; 
     _channel?.sink.close();
     _controller.dispose();
     _scrollController.dispose();
@@ -99,60 +102,61 @@ class _ChatsInScreenState extends State<ChatsInScreen> {
   
 
   void _connectWebSocket() {
-    // ✅ FIX 4: Close old channel cleanly before reconnecting
-    _channel?.sink.close();
-    _wsConnected = false;
-final uri = MsgService.wsUri(widget.conversationId, AuthService.accessToken);
-print('🔌 WS URI: $uri | scheme: ${uri.scheme} | host: ${uri.host} | port: ${uri.port}');
-_channel = WebSocketChannel.connect(uri);
-    try {
-      final uri = MsgService.wsUri(widget.conversationId, AuthService.accessToken);
-      _channel = WebSocketChannel.connect(uri);
+  _isDisposed = false; // reset on reconnect
+  _channel?.sink.close();
+  _wsConnected = false;
 
-      // ✅ FIX 5: Wait for handshake before listening — prevents the crash
-      _channel!.ready.then((_) {
-        if (!mounted) return;
-        setState(() {
-          _wsConnected = true;
-          _wsRetryCount = 0; // reset on successful connect
-        });
+  final uri = MsgService.wsUri(widget.conversationId, AuthService.accessToken);
+  print('🔌 WS URI: $uri');
 
-        _channel!.stream.listen(
-          (data) {
-            if (!mounted) return;
-            final newMessage = jsonDecode(data);
-            if (newMessage['type'] == 'online_status') {
-              setState(() => _isOnline = newMessage['is_online'] == true);
-              return;
-            }
-            setState(() => messages.add(newMessage));
-            _scrollToBottom();
-          },
-          onError: (e) {
-            debugPrint('WebSocket error: $e');
-            setState(() => _wsConnected = false);
-            _scheduleReconnect();
-          },
-          onDone: () {
-            debugPrint('WebSocket closed');
-            if (mounted) setState(() => _wsConnected = false);
-            _scheduleReconnect();
-          },
-          cancelOnError: false, // ✅ FIX 6: Don't kill stream on single error
-        );
-      }).catchError((e) {
-        // ✅ FIX 7: Handshake failed (server still waking) — retry gracefully
-        debugPrint('WebSocket handshake failed: $e');
-        if (mounted) setState(() => _wsConnected = false);
-        _scheduleReconnect();
+  try {
+    _channel = WebSocketChannel.connect(uri); // ← only ONCE ✅
+
+    _channel!.ready.then((_) {
+      if (!mounted || _isDisposed) return; // ← add _isDisposed check
+      setState(() {
+        _wsConnected = true;
+        _wsRetryCount = 0;
       });
-    } catch (e) {
-      debugPrint('WebSocket connection failed: $e');
-      if (mounted) setState(() => _wsConnected = false);
-      _scheduleReconnect();
-    }
-  }
 
+      _channel!.stream.listen(
+        (data) {
+          if (!mounted || _isDisposed) return; // ← add _isDisposed check
+          final newMessage = jsonDecode(data);
+          if (newMessage['type'] == 'online_status') {
+            setState(() => _isOnline = newMessage['is_online'] == true);
+            return;
+          }
+          setState(() => messages.add(newMessage));
+          _scrollToBottom();
+        },
+        onError: (e) {
+          if (!mounted || _isDisposed) return; // ← add _isDisposed check
+          debugPrint('WebSocket error: $e');
+          setState(() => _wsConnected = false);
+          _scheduleReconnect();
+        },
+        onDone: () {
+          if (!mounted || _isDisposed) return; // ← THIS was causing your crash
+          debugPrint('WebSocket closed');
+          setState(() => _wsConnected = false);
+          _scheduleReconnect();
+        },
+        cancelOnError: false,
+      );
+    }).catchError((e) {
+      if (!mounted || _isDisposed) return; // ← add _isDisposed check
+      debugPrint('WebSocket handshake failed: $e');
+      setState(() => _wsConnected = false);
+      _scheduleReconnect();
+    });
+  } catch (e) {
+    if (!mounted || _isDisposed) return;
+    debugPrint('WebSocket connection failed: $e');
+    setState(() => _wsConnected = false);
+    _scheduleReconnect();
+  }
+}
   // ✅ FIX 8: Centralized retry with cap to avoid infinite loops
   void _scheduleReconnect() {
     if (!mounted) return;
