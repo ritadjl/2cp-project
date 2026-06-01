@@ -11,9 +11,6 @@ urlpatterns = [
     # announcements - read
     path('announcements/', views.AnnouncementListAPIView.as_view(), name='announcement-list'),
     
-     #debug
-    path('debug/seller-photo/', views.DebugSellerPhotoView.as_view(), name='debug-seller-photo'),
-
     # announcements - write (requires auth)
     path('announcements/my/', views.MyAnnouncementsAPIView.as_view(), name='my-announcements'),
     path('announcements/create/', views.AnnouncementCreateAPIView.as_view(), name='announcement-create'), 

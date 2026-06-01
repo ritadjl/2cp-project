@@ -462,6 +462,7 @@ class ReportListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return Report.objects.filter(reporter_id=self.request.user.id)
+<<<<<<< HEAD
 
 
 class DebugSellerPhotoView(generics.GenericAPIView):
@@ -476,3 +477,6 @@ class DebugSellerPhotoView(generics.GenericAPIView):
             'student_found': s is not None,
             'profile_picture': str(s.profile_picture) if s else None,
         })
+=======
+     
+>>>>>>> d00e7b87f24c1adc952cd5b5a6d3c28f23ecd85f
