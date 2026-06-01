@@ -7,7 +7,6 @@ import '../../services/msg_service.dart';
 import '../../services/auth_services.dart';
 import '../../services/favorite_service.dart';
 import '../chats/chat_in.dart';
-import 'package:compusmarket/screens/profiles/My_profile.dart';
 import '../profiles/His_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -61,7 +60,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     if (galleryImages.isEmpty) galleryImages = [''];
-    _loadFullDetails();
   }
 
   String get _productName =>
@@ -179,28 +177,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  void _toggleRating() async {
-    final bool isReal = widget.product['isReal'] == true;
-    setState(() {
-      isRated = !isRated;
-      if (isRated) {
-        globalRatedProducts.add(widget.product);
-      } else {
-        globalRatedProducts.removeWhere(
-          (p) => (p['name'] ?? p['title']) == _productName,
-        );
-      }
-    });
-
-    if (isReal && isRated) {
-      try {
-        await AnnouncementService.rateAnnouncement(widget.product['id']);
-      } catch (e) {
-        print('❌ Rating failed: $e');
-      }
-    }
-  }
-
   void _showReportDialog() {
     showDialog(
       context: context,
@@ -211,7 +187,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           'Inappropriate Content',
           'Harassment or Abuse',
           'Fake Product / Scam',
-          'Other',
+          'Other'
         ];
         return StatefulBuilder(
           builder: (context, setStateDialog) {
@@ -238,7 +214,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ...reasons.map((reason) {
                     return RadioListTile<String>(
                       activeColor: Colors.red,
-                      title: Text(reason, style: const TextStyle(fontSize: 14)),
+                      title:
+                          Text(reason, style: const TextStyle(fontSize: 14)),
                       value: reason,
                       groupValue: selectedReason,
                       onChanged: (val) {
@@ -253,10 +230,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Colors.grey)),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -278,8 +253,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Report submitted! Our team will review it.',
-                          ),
+                              'Report submitted! Our team will review it.'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -296,10 +270,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'Submit Report',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: const Text('Submit Report',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -348,7 +320,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
                   ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
+                      loadingProgress.expectedTotalBytes!
                   : null,
               color: const Color(0xFF1A73E8),
             ),
@@ -414,16 +386,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         final commentsData = await AnnouncementService.getComments(
           widget.product['id'],
         );
-        if (commentsData.isNotEmpty)
+        if (commentsData.isNotEmpty) {
           debugPrint('COMMENT DATA: ${commentsData.first}');
+        }
         if (mounted) {
           setState(() {
             _comments = List<Map<String, dynamic>>.from(
               commentsData.map(
                 (e) => {
                   'text': e['content'] ?? e['text'] ?? '',
-                  'user':
-                      e['user_full_name'] ?? e['user']?['full_name'] ?? 'User',
+                  'user': e['user_full_name'] ??
+                      e['user']?['full_name'] ??
+                      'User',
                 },
               ),
             );
@@ -478,70 +452,76 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       child: localIsLoading
                           ? const Center(child: CircularProgressIndicator())
                           : errorMessage.isNotEmpty
-                          ? Center(
-                              child: Text(
-                                errorMessage,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            )
-                          : _comments.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No comments yet. Be the first!',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _comments.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8.0,
+                              ? Center(
+                                  child: Text(
+                                    errorMessage,
+                                    style:
+                                        const TextStyle(color: Colors.red),
                                   ),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const CircleAvatar(
-                                          backgroundColor: Color(0xFF1A73E8),
-                                          child: Icon(
-                                            Icons.person,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                _comments[index]['user'] ??
-                                                    'User',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
+                                )
+                              : _comments.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        'No comments yet. Be the first!',
+                                        style:
+                                            TextStyle(color: Colors.grey),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: _comments.length,
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8.0),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const CircleAvatar(
+                                                  backgroundColor:
+                                                      Color(0xFF1A73E8),
+                                                  child: Icon(Icons.person,
+                                                      color: Colors.white),
                                                 ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                _comments[index]['text'] ?? '',
-                                              ),
-                                            ],
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        _comments[index]
+                                                                ['user'] ??
+                                                            'User',
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 13,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        _comments[index]
+                                                                ['text'] ??
+                                                            '',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        );
+                                      },
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -555,8 +535,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 borderRadius: BorderRadius.circular(25),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
+                                  horizontal: 20),
                             ),
                           ),
                         ),
@@ -574,7 +553,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     text,
                                   );
                                   if (mounted) {
-                                    // Reload comments from API after posting
                                     isFetching = false;
                                     loadData(setStateBottomSheet);
                                   }
@@ -582,14 +560,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Failed to post comment'),
+                                        content:
+                                            Text('Failed to post comment'),
                                       ),
                                     );
                                   }
                                 }
                               } else {
                                 setState(() {
-                                  _comments.add({'text': text, 'user': 'You'});
+                                  _comments.add(
+                                      {'text': text, 'user': 'You'});
                                 });
                                 setStateBottomSheet(() {});
                               }
@@ -624,6 +604,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── HEADER ──
             Padding(
               padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
               child: Row(
@@ -653,16 +634,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(
-                    width: 45,
-                  ), // Balancing spacer for perfect centering
+                  const SizedBox(width: 45),
                 ],
               ),
             ),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-            // ── IMAGE SLIDESHOW + HEADER ──
+            // ── IMAGE SLIDESHOW ──
             Stack(
               children: [
                 Container(
@@ -702,11 +681,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               children: List.generate(
                                 galleryImages.length,
                                 (index) => AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
+                                  duration:
+                                      const Duration(milliseconds: 300),
                                   margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  width: selectedImageIndex == index ? 20 : 8,
+                                      horizontal: 4),
+                                  width:
+                                      selectedImageIndex == index ? 20 : 8,
                                   height: 8,
                                   decoration: BoxDecoration(
                                     color: selectedImageIndex == index
@@ -718,24 +698,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               ),
                             ),
                           ),
-                        // Add inside the Stack that contains the PageView, after the dot indicators Positioned:
-                        if ((widget.product['status'] ?? 'active') != 'active')
+                        // Status badge (SOLD / INACTIVE)
+                        if ((widget.product['status'] ?? 'active') !=
+                            'active')
                           Positioned(
                             top: 80,
                             left: 20,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 6,
-                              ),
+                                  horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
                                 color: const Color(0xff2853af),
                                 borderRadius: BorderRadius.circular(25),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color:
+                                        Colors.black.withOpacity(0.2),
                                     blurRadius: 6,
-                                  ),
+                                  )
                                 ],
                               ),
                               child: Row(
@@ -768,7 +748,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                 ),
 
-                // ── Favorite Button at bottom-right corner ──
+                // Favorite button
                 Positioned(
                   bottom: 16,
                   right: 16,
@@ -788,7 +768,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ],
                       ),
                       child: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
                         color: isFavorite ? Colors.red : Colors.grey,
                       ),
                     ),
@@ -804,12 +786,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               SizedBox(
                 height: 70,
                 child: ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.05),
                   scrollDirection: Axis.horizontal,
                   itemCount: galleryImages.length,
                   itemBuilder: (context, index) {
                     return GestureDetector(
-                      onTap: () => setState(() => selectedImageIndex = index),
+                      onTap: () =>
+                          setState(() => selectedImageIndex = index),
                       child: Container(
                         width: 70,
                         margin: const EdgeInsets.only(right: 15),
@@ -836,64 +820,64 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
             SizedBox(height: screenWidth * 0.05),
 
-            // ── SELLER PROFILE ──
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-              child: Row(
-                children: [
-                  // FIXED — shows seller_photo from API, falls back to icon
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFF1A73E8),
-                    backgroundImage:
-                        (widget.product['seller_photo'] != null &&
-                            widget.product['seller_photo']
-                                .toString()
-                                .isNotEmpty)
-                        ? NetworkImage(
-                            widget.product['seller_photo'].toString(),
-                          )
-                        : null,
-                    child:
-                        (widget.product['seller_photo'] == null ||
-                            widget.product['seller_photo'].toString().isEmpty)
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.product['seller'] ??
-                              widget.product['sellerName'] ??
-                              'Campus Seller',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          widget.product['university']?.toString() ??
-                              'Verified User',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
+            // ── SELLER PROFILE — hidden for own product ──
+            if (!_isOwnProduct) ...[
+              Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFF1A73E8),
+                      backgroundImage: (widget.product['seller_photo'] !=
+                                  null &&
+                              widget.product['seller_photo']
+                                  .toString()
+                                  .isNotEmpty)
+                          ? NetworkImage(
+                              widget.product['seller_photo'].toString())
+                          : null,
+                      child: (widget.product['seller_photo'] == null ||
+                              widget.product['seller_photo']
+                                  .toString()
+                                  .isEmpty)
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
                     ),
-                  ),
-                  if (!_isOwnProduct)
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.product['seller'] ??
+                                widget.product['sellerName'] ??
+                                'Campus Seller',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            widget.product['university']?.toString() ??
+                                'Verified User',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     TextButton(
                       onPressed: () {
-                        final sellerId = widget.product['seller_id']
-                            ?.toString();
+                        final sellerId =
+                            widget.product['seller_id']?.toString();
                         if (sellerId == null || sellerId.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Seller info not available'),
-                            ),
+                                content:
+                                    Text('Seller info not available')),
                           );
                           return;
                         }
@@ -907,15 +891,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       },
                       child: const Text('View Profile'),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-
-            SizedBox(height: screenWidth * 0.05),
+              SizedBox(height: screenWidth * 0.05),
+            ],
 
             // ── PRODUCT INFO ──
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+              padding:
+                  EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -962,82 +947,80 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                   SizedBox(height: screenWidth * 0.05),
 
-                  // ── RATING & COMMENTS ──
+                  // ── ACTIONS ROW ──
+                  // Own product: only Comments
+                  // Other product: Rating + Comments + Report
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.amber.withOpacity(0.5),
+                        // Rating stars — hidden for own product
+                        if (!_isOwnProduct) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.amber.withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              children: List.generate(5, (index) {
+                                return GestureDetector(
+                                  onTap: () async {
+                                    final int selectedRating = index + 1;
+                                    setState(() {
+                                      _userRating = selectedRating;
+                                      isRated = true;
+                                    });
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setInt(
+                                        'rating_${widget.product['id']}',
+                                        selectedRating);
+                                    if (widget.product['isReal'] == true) {
+                                      try {
+                                        await AnnouncementService
+                                            .rateAnnouncement(
+                                          widget.product['id'],
+                                          rating: selectedRating,
+                                        );
+                                      } catch (e) {
+                                        print('❌ Rating failed: $e');
+                                      }
+                                    }
+                                  },
+                                  child: Icon(
+                                    index < _userRating
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 20,
+                                  ),
+                                );
+                              }),
                             ),
                           ),
-                          child: Row(
-                            children: List.generate(5, (index) {
-                              return GestureDetector(
-                                onTap: () async {
-                                  final int selectedRating = index + 1;
-                                  setState(() {
-                                    _userRating = selectedRating;
-                                    isRated = true;
-                                  });
-                                  final prefs =
-                                      await SharedPreferences.getInstance(); // ← add
-                                  await prefs.setInt(
-                                    'rating_${widget.product['id']}',
-                                    selectedRating,
-                                  );
-                                  if (widget.product['isReal'] == true) {
-                                    try {
-                                      await AnnouncementService.rateAnnouncement(
-                                        widget.product['id'],
-                                        rating: selectedRating,
-                                      );
-                                    } catch (e) {
-                                      print('❌ Rating failed: $e');
-                                    }
-                                  }
-                                },
-                                child: Icon(
-                                  index < _userRating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 20,
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
+                          const SizedBox(width: 15),
+                        ],
+
+                        // Comments — always visible
                         GestureDetector(
                           onTap: () => _showCommentsSheet(context),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.grey.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: Colors.grey.withOpacity(0.3),
-                              ),
+                                  color: Colors.grey.withOpacity(0.3)),
                             ),
                             child: const Row(
                               children: [
-                                Icon(
-                                  Icons.comment_outlined,
-                                  color: Colors.black87,
-                                  size: 20,
-                                ),
+                                Icon(Icons.comment_outlined,
+                                    color: Colors.black87, size: 20),
                                 SizedBox(width: 6),
                                 Text(
                                   'Comments',
@@ -1050,29 +1033,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
                           ),
                         ),
+
+                        // Report — hidden for own product
                         if (!_isOwnProduct) ...[
                           const SizedBox(width: 15),
                           GestureDetector(
                             onTap: _showReportDialog,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
+                                  horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.red.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: Colors.red.withOpacity(0.3),
-                                ),
+                                    color: Colors.red.withOpacity(0.3)),
                               ),
                               child: const Row(
                                 children: [
-                                  Icon(
-                                    Icons.report_outlined,
-                                    color: Colors.red,
-                                    size: 20,
-                                  ),
+                                  Icon(Icons.report_outlined,
+                                      color: Colors.red, size: 20),
                                   SizedBox(width: 6),
                                   Text(
                                     'Report product',
@@ -1095,7 +1074,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   // ── DESCRIPTION ──
                   const Text(
                     'Description',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   _productDescription.isEmpty
@@ -1112,7 +1092,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           children: [
                             Text(
                               _productDescription,
-                              maxLines: isDescriptionExpanded ? null : 3,
+                              maxLines:
+                                  isDescriptionExpanded ? null : 3,
                               overflow: isDescriptionExpanded
                                   ? TextOverflow.visible
                                   : TextOverflow.ellipsis,
@@ -1149,7 +1130,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
       ),
 
-      // ── CONTACT SELLER BUTTON ──
+      // ── BOTTOM BUTTON ──
+      // Own product  → "Delete Product" (red)
+      // Other product → "Contact seller" (blue)
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -1158,86 +1141,147 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
           child: ElevatedButton(
             onPressed: () async {
-              try {
-                final sellerId = widget.product['seller_id']?.toString();
-                final listingId = widget.product['id']?.toString();
-                print('DEBUG seller_id: $sellerId');
-                print('DEBUG listing id: $listingId');
-
-                if (sellerId == null || listingId == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Seller info not available')),
-                  );
-                  return;
-                }
-
-                if (sellerId == MsgService.currentUserId) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('This is your own listing')),
-                  );
-                  return;
-                }
-
-                final conversation = await MsgService.getOrCreateConversation(
-                  AuthService.accessToken,
-                  sellerId,
-                  listingId,
-                );
-
-                final seller = conversation['seller'] ?? {};
-                final first = (seller['first_name'] ?? '').toString().trim();
-                final last = (seller['last_name'] ?? '').toString().trim();
-                final name = [first, last].where((s) => s.isNotEmpty).join(' ');
-
-                if (mounted) {
-                  final announcement = {
-                    'id': widget.product['id'],
-                    'title':
-                        widget.product['name'] ?? widget.product['title'] ?? '',
-                    'price':
-                        widget.product['priceValue'] ??
-                        widget.product['price'] ??
-                        '',
-                    'photo':
-                        galleryImages.isNotEmpty && galleryImages[0].isNotEmpty
-                        ? galleryImages[0] // ✅ use the already-resolved first image
-                        : '',
-                    'currency': 'DA',
-                  };
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatsInScreen(
-                        name: name.isNotEmpty
-                            ? name
-                            : seller['email'] ?? 'Seller',
-                        conversationId: conversation['id'],
-                        isNetwork: false,
-                        isOnline: false,
-                        announcement:
-                            announcement, // ✅ now the product card shows in chat
+              if (_isOwnProduct) {
+                // ── DELETE PRODUCT ──
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    title: const Text('Delete Product'),
+                    content: const Text(
+                        'Are you sure you want to delete this product?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel',
+                            style: TextStyle(color: Colors.grey)),
                       ),
-                    ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red),
+                        child: const Text('Delete',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  try {
+                    await AnnouncementService.deleteAnnouncement(
+                        widget.product['id']);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content:
+                                Text('Product deleted successfully')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Failed to delete: $e')),
+                      );
+                    }
+                  }
+                }
+              } else {
+                // ── CONTACT SELLER ──
+                try {
+                  final sellerId =
+                      widget.product['seller_id']?.toString();
+                  final listingId =
+                      widget.product['id']?.toString();
+                  print('DEBUG seller_id: $sellerId');
+                  print('DEBUG listing id: $listingId');
+
+                  if (sellerId == null || listingId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Seller info not available')),
+                    );
+                    return;
+                  }
+
+                  if (sellerId == MsgService.currentUserId) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('This is your own listing')),
+                    );
+                    return;
+                  }
+
+                  final conversation =
+                      await MsgService.getOrCreateConversation(
+                    AuthService.accessToken,
+                    sellerId,
+                    listingId,
+                  );
+
+                  final seller = conversation['seller'] ?? {};
+                  final first =
+                      (seller['first_name'] ?? '').toString().trim();
+                  final last =
+                      (seller['last_name'] ?? '').toString().trim();
+                  final name = [first, last]
+                      .where((s) => s.isNotEmpty)
+                      .join(' ');
+
+                  if (mounted) {
+                    final announcement = {
+                      'id': widget.product['id'],
+                      'title': widget.product['name'] ??
+                          widget.product['title'] ??
+                          '',
+                      'price': widget.product['priceValue'] ??
+                          widget.product['price'] ??
+                          '',
+                      'photo': galleryImages.isNotEmpty &&
+                              galleryImages[0].isNotEmpty
+                          ? galleryImages[0]
+                          : '',
+                      'currency': 'DA',
+                    };
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatsInScreen(
+                          name: name.isNotEmpty
+                              ? name
+                              : seller['email'] ?? 'Seller',
+                          conversationId: conversation['id'],
+                          isNetwork: false,
+                          isOnline: false,
+                          announcement: announcement,
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('Could not open chat: $e')),
                   );
                 }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Could not open chat: $e')),
-                );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A73E8),
+              backgroundColor: _isOwnProduct
+                  ? Colors.red
+                  : const Color(0xFF1A73E8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
               padding: const EdgeInsets.symmetric(vertical: 18),
               elevation: 0,
             ),
-            child: const Text(
-              'Contact seller',
-              style: TextStyle(
+            child: Text(
+              _isOwnProduct ? 'Delete Product' : 'Contact seller',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -1247,34 +1291,5 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _loadFullDetails() async {
-    final int? announcementId = widget.product['id'];
-
-    // Only fetch for real database announcements
-    if (announcementId != null && widget.product['isReal'] == true) {
-      try {
-        final details = await AnnouncementService.getAnnouncementDetails(
-          announcementId,
-        );
-        final photos = details['photos'];
-
-        if (photos != null && photos is List && photos.isNotEmpty) {
-          final List<String> loadedUrls = photos
-              .map((p) => p is Map ? (p['url'] ?? '').toString() : p.toString())
-              .where((url) => url.isNotEmpty)
-              .toList();
-
-          if (mounted && loadedUrls.isNotEmpty) {
-            setState(() {
-              galleryImages = loadedUrls;
-            });
-          }
-        }
-      } catch (e) {
-        debugPrint('❌ Failed to fetch full product details: $e');
-      }
-    }
   }
 }

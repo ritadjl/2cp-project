@@ -3,6 +3,7 @@ import 'package:compusmarket/screens/authentication/sign_in.dart';
 import 'package:compusmarket/screens/home/add_new_product.dart';
 import 'package:compusmarket/screens/profiles/Edit_profil.dart';
 import 'package:compusmarket/services/announcement_service.dart';
+import 'package:compusmarket/services/msg_service.dart';
 import 'package:compusmarket/services/profile_api_service.dart';
 import 'package:compusmarket/services/auth_services.dart';
 import 'package:flutter/material.dart';
@@ -423,9 +424,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                       0.0)
                                   .toDouble(),
                               'isRated': false,
-                              'image': listing['image'] ??
-                                  listing['photos']?[0]?['image'] ??
-                                  'assets/images/products/airpods.jpg',
+                              // ✅ AFTER
+'image': listing['photos']?[0]?['url'] ??
+         listing['photos']?[0]?['image'] ??
+         listing['image'] ??
+         '',
+'photos': listing['photos'] ?? [],
                               'isReal': true,
                               'isUserAdded': false,
                               'id': listing['id'],
@@ -444,8 +448,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               'status': listing['status'] ?? 'active',
                               'model': listing['model']?.toString() ?? '',
                               'seller': listing['seller'] ?? '',
-                              'seller_id':
-                                  listing['seller_id']?.toString() ?? '',
+'seller_id': MsgService.currentUserId ?? '',
                               'seller_avatar': listing['seller_avatar'],
                             };
 

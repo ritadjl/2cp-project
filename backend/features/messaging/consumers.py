@@ -35,22 +35,43 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.user_id = str(self.scope['user'].id)
         self.redis = aioredis.from_url(REDIS_URL)
 
-        await self.redis.set(f"user_{self.user_id}_online", "true")
+        await self.redis.set(f"user_{self.user_id}_online", "true", ex=30)
 
         self.conversation_id = self.scope['url_route']['kwargs']['conversation_id']
         self.room_group_name = f'chat_{self.conversation_id}'
-
         self.user_group_name = f'user_{self.user_id}'
+
         await self.channel_layer.group_add(self.user_group_name, self.channel_name)
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
+
+        self.heartbeat_task = asyncio.create_task(self._heartbeat())
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {"type": "online.status", "user_id": self.user_id, "is_online": True}
         )
 
+    async def _heartbeat(self):
+        """Refresh Redis TTL every 25 seconds"""
+        while True:
+            try:
+                await asyncio.sleep(25)
+                await self.redis.set(f"user_{self.user_id}_online", "true", ex=30)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"Heartbeat error: {e}")
+                break
+
     async def disconnect(self, close_code):
+        if hasattr(self, 'heartbeat_task'):
+            self.heartbeat_task.cancel()
+            try:
+                await self.heartbeat_task
+            except asyncio.CancelledError:
+                pass
+
         if hasattr(self, 'redis'):
             if hasattr(self, 'room_group_name'):
                 await self.channel_layer.group_send(
@@ -115,12 +136,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def notify_receiver(self, message):
         try:
-            conversation = await Conversation.objects.aget(
-                id=self.conversation_id
-            )
+            conversation = await Conversation.objects.aget(id=self.conversation_id)
             sender = self.scope['user']
 
-            receiver_id = conversation.seller_id if sender.id == conversation.buyer_id else conversation.buyer_id
+            receiver_id = (
+                conversation.seller_id
+                if sender.id == conversation.buyer_id
+                else conversation.buyer_id
+            )
 
             await asyncio.to_thread(
                 create_notification,
