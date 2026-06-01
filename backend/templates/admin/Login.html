@@ -1,0 +1,147 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Market Admin</title>
+  <link rel="stylesheet" href="{% static 'admin/css/campusmarket.css' %}">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #F4F7FC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+    .cm-login-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .cm-login-brand img {
+      width: 110px;
+      margin-bottom: 16px;
+    }
+    .cm-login-brand h1 {
+      font-size: 42px;
+      font-weight: 700;
+      color: #1A2535;
+      margin-bottom: 6px;
+    }
+    .cm-login-brand p {
+      font-size: 16px;
+      color: #6B7A90;
+    }
+    .cm-login-card {
+      background: #fff;
+      border: 0.5px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .cm-login-card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1A2535;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .cm-login-card .form-group {
+      margin-bottom: 16px;
+    }
+    .cm-login-card label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6B7A90;
+      margin-bottom: 6px;
+    }
+    .cm-login-card input[type="text"],
+    .cm-login-card input[type="email"],
+    .cm-login-card input[type="password"] {
+      width: 100%;
+      background: #F4F7FC;
+      border: 0.5px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 14px;
+      color: #1A2535;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .cm-login-card input:focus {
+      border-color: #3076E0;
+      box-shadow: 0 0 0 3px rgba(48,118,224,0.12);
+      outline: none;
+    }
+    .cm-login-card input[type="submit"] {
+      width: 100%;
+      background: #3076E0;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px;
+      margin-top: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .cm-login-card input[type="submit"]:hover {
+      background: #1d5bbf;
+    }
+    .errornote, .errorlist {
+      background: #FCEBEB;
+      color: #791F1F;
+      border-left: 3px solid #E24B4A;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      list-style: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cm-login-brand">
+    <img src="{% static 'admin/logo.png' %}" alt="Logo" 
+     onerror="this.style.display='none'"
+     style="filter: brightness(0); width: 300px; margin-bottom: 16px;">
+    
+  </div>
+
+  <div class="cm-login-card">
+    <h2>{% trans "Bienvenue sur Campus Market Admin" %}</h2>
+
+    {% if form.errors %}
+      <ul class="errorlist">
+        <li>{% trans "Identifiants incorrects. Veuillez réessayer." %}</li>
+      </ul>
+    {% endif %}
+
+    <form method="post" action="{{ app_path }}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="form-group">
+        <label for="id_username">{% trans "Email" %}</label>
+        <input type="text" id="id_username" name="username" 
+               placeholder="test@test.com" autofocus>
+      </div>
+      <div class="form-group">
+        <label for="id_password">{% trans "Mot de passe" %}</label>
+        <input type="password" id="id_password" name="password" 
+               placeholder="••••••••">
+      </div>
+
+      <input type="submit" value="{% trans 'Log in' %}">
+    </form>
+  </div>
+
+</body>
+</html>

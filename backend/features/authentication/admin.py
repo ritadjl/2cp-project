@@ -36,17 +36,26 @@ class CustomUserAdmin(UserAdmin):
     @admin.display(description='Rôle')
     def role_badge(self, obj):
         if obj.is_superuser:
-            return format_html('<span class="cm-badge cm-badge-admin">Superadmin</span>')
+            return format_html(
+            '<span class="cm-badge cm-badge-admin">{}</span>', 'Superadmin'
+        )
         if obj.is_staff:
-            return format_html('<span class="cm-badge cm-badge-spam">Staff</span>')
-        return format_html('<span class="cm-badge cm-badge-student">Student</span>')
- 
+            return format_html(
+            '<span class="cm-badge cm-badge-spam">{}</span>', 'Staff'
+            )
+        return format_html(
+        '<span class="cm-badge cm-badge-student">{}</span>', 'Student'
+            )
+
     @admin.display(description='Statut')
     def is_active_badge(self, obj):
         if obj.is_active:
-            return format_html('<span class="cm-badge cm-badge-resolved">✓ Actif</span>')
-        return format_html('<span class="cm-badge cm-badge-pending">⏳ Inactif</span>')
- 
+            return format_html(
+            '<span class="cm-badge cm-badge-resolved">{}</span>', ' Actif'
+        )
+        return format_html(
+        '<span class="cm-badge cm-badge-pending">{}</span>', 'Inactif'
+        )
  
 # ══════════════════════════════════════════════════════════════════
 #  STUDENT
