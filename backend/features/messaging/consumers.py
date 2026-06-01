@@ -32,46 +32,38 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
+        self.user_id = str(self.scope['user'].id)
         self.redis = aioredis.from_url(REDIS_URL)
-        await self.redis.set(f"user_{self.scope['user'].id}_online", "true")
+
+        await self.redis.set(f"user_{self.user_id}_online", "true")
 
         self.conversation_id = self.scope['url_route']['kwargs']['conversation_id']
         self.room_group_name = f'chat_{self.conversation_id}'
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        self.user_group_name = f'user_{self.user_id}'
+        await self.channel_layer.group_add(self.user_group_name, self.channel_name)
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
         await self.channel_layer.group_send(
             self.room_group_name,
-            {
-                "type": "online.status",
-                "user_id": str(self.scope['user'].id),
-                "is_online": True
-            }
+            {"type": "online.status", "user_id": self.user_id, "is_online": True}
         )
 
     async def disconnect(self, close_code):
         if hasattr(self, 'redis'):
-            await self.redis.delete(f"user_{self.scope['user'].id}_online")
+            if hasattr(self, 'room_group_name'):
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {"type": "online.status", "user_id": self.user_id, "is_online": False}
+                )
+            await self.redis.delete(f"user_{self.user_id}_online")
             await self.redis.aclose()
 
         if hasattr(self, 'room_group_name'):
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "online.status",
-                    "user_id": str(self.scope['user'].id),
-                    "is_online": False
-                }
-            )
-
-            await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        if hasattr(self, 'user_group_name'):
+            await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -91,7 +83,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "timestamp": str(msg.timestamp),
             "is_read": msg.is_read,
             "sender": {
-                "email": self.scope['user'].email
+                "email": self.scope['user'].email,
+                "id": str(self.scope['user'].id),
             },
             "reply_to": {
                 "id": str(msg.reply_to.id),

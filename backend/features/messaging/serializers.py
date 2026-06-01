@@ -30,7 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
     reply_to = serializers.SerializerMethodField()
-    image_url = serializers.SerializerMethodField()  # ← ADD
+    image_url = serializers.SerializerMethodField()
 
     def get_reply_to(self, obj):
         if obj.reply_to:
@@ -41,7 +41,7 @@ class MessageSerializer(serializers.ModelSerializer):
             }
         return None
 
-    def get_image_url(self, obj):  # ← ADD
+    def get_image_url(self, obj):
         if obj.image:
             request = self.context.get('request')
             if request:
@@ -52,7 +52,8 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'sender', 'content', 'timestamp', 'is_read', 'reply_to', 'image_url']
-        
+
+
 class ConversationSerializer(serializers.ModelSerializer):
     buyer = UserSerializer(read_only=True)
     seller = UserSerializer(read_only=True)
@@ -64,6 +65,7 @@ class ConversationSerializer(serializers.ModelSerializer):
     )
     last_message = serializers.SerializerMethodField()
     last_message_time = serializers.SerializerMethodField()
+    last_message_sender_id = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
     is_online = serializers.SerializerMethodField()
 
@@ -89,6 +91,10 @@ class ConversationSerializer(serializers.ModelSerializer):
         msg = obj.messages.order_by('-timestamp').first()
         return msg.timestamp.isoformat() if msg else None
 
+    def get_last_message_sender_id(self, obj):
+        msg = obj.messages.order_by('-timestamp').first()
+        return str(msg.sender_id) if msg else None
+
     def get_unread_count(self, obj):
         request = self.context.get('request')
         if not request:
@@ -99,8 +105,11 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = [
             'id', 'buyer', 'seller', 'announcement', 'announcement_id',
-            'created_at', 'last_message', 'last_message_time', 'unread_count', 'is_online'
+            'created_at', 'last_message', 'last_message_time',
+            'last_message_sender_id',
+            'unread_count', 'is_online'
         ]
+
 
 class StartConversationSerializer(serializers.Serializer):
     seller_id = serializers.CharField()

@@ -1,6 +1,5 @@
 // ignore: file_names
 import 'package:compusmarket/screens/authentication/sign_in.dart';
-//import 'package:compusmarket/screens/authentication/sign_up.dart';
 import 'package:compusmarket/screens/home/add_new_product.dart';
 import 'package:compusmarket/screens/profiles/Edit_profil.dart';
 import 'package:compusmarket/services/announcement_service.dart';
@@ -63,7 +62,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Future<void> _loadAll() async {
     if (mounted) setState(() => _isLoading = true);
     try {
-      // Fetch all data in parallel
       final results = await Future.wait([
         ProfileApiService.getMyProfile(),
         AuthService.getMe().catchError((_) => <String, dynamic>{}),
@@ -71,15 +69,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           print('❌ getMyAnnouncements error: $e');
           return <dynamic>[];
         }),
-        ProfileApiService.getMyDeals().catchError((_) => <dynamic>[]),
         AuthService.getUniversities().catchError((_) => <dynamic>[]),
       ]);
 
       final profile = results[0] as Map<String, dynamic>;
       final authMe = results[1] as Map<String, dynamic>;
       final listings = results[2] as List<dynamic>;
-      final deals = results[3] as List<dynamic>;
-      final universities = results[4] as List<dynamic>;
+      final universities = results[3] as List<dynamic>;
 
       debugPrint('AUTH ME DATA: $authMe');
       debugPrint('PROFILE KEYS: ${profile.keys.toList()}');
@@ -96,9 +92,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           _notificationsEnabled = profile['notifications_enabled'] ?? false;
           _showEmail = profile['show_email'] ?? false;
           _myListings = listings;
-
           _itemsCount = listings.length;
-          _dealsCount = deals.length;
+          // ✅ Read completed_sales from profile instead of deals list
+          _dealsCount = profile['completed_sales'] ?? 0;
           _averageRating =
               double.tryParse(profile['average_rating']?.toString() ?? '0') ??
               0.0;
@@ -155,9 +151,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
-    Navigator.pop(context); // close settings bottom sheet
+    Navigator.pop(context);
 
-    // Clear credentials BEFORE navigating
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('saved_email');
     await prefs.remove('saved_password');
@@ -263,7 +258,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-
                                 if (_showEmail) ...[
                                   SizedBox(height: screenHeight * 0.005),
                                   Text(
@@ -320,7 +314,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         ),
 
                         // ── Avatar ──
-                        // In MyProfileScreen — replace the GestureDetector avatar with this simple version:
                         Positioned(
                           top: 0,
                           child: Container(
@@ -358,35 +351,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ),
 
                     SizedBox(height: screenHeight * 0.04),
-
-                    // ── About ──
-                    // if (_userBio.isNotEmpty)
-                    //   Padding(
-                    //     padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-                    //     child: Column(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: [
-                    //         Text(
-                    //           "Bio",
-                    //           style: TextStyle(
-                    //             fontWeight: FontWeight.bold,
-                    //             color: const Color(0xff808897),
-                    //             fontSize: screenWidth * 0.05,
-                    //           ),
-                    //         ),
-                    //         SizedBox(height: screenHeight * 0.01),
-                    //         Text(
-                    //           _userBio,
-                    //           softWrap: true,
-                    //           style: TextStyle(
-                    //             color: const Color(0xff808897),
-                    //             fontSize: screenWidth * 0.035,
-                    //             height: 1.6,
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
 
                     // ── My Listings ──
                     Padding(
@@ -436,7 +400,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           itemBuilder: (context, index) {
                             final listing = visibleListings[index];
 
-                            // ✅ strip " DA" and parse price correctly
                             final rawPriceValue = listing['priceValue'];
                             final rawPriceStr =
                                 listing['price']?.toString() ?? '0';
@@ -452,19 +415,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                             final product = {
                               'name': listing['title'] ?? listing['name'] ?? '',
-                              'price':
-                                  rawPriceStr, // keep original string e.g. "42444.00 DA"
-                              'priceValue':
-                                  parsedPrice, // ✅ correct number e.g. 42444.0
+                              'price': rawPriceStr,
+                              'priceValue': parsedPrice,
                               'category': listing['category'] ?? '',
-                              'rating':
-                                  (listing['average_rating'] ??
-                                          listing['rating'] ??
-                                          0.0)
-                                      .toDouble(),
+                              'rating': (listing['average_rating'] ??
+                                      listing['rating'] ??
+                                      0.0)
+                                  .toDouble(),
                               'isRated': false,
-                              'image':
-                                  listing['image'] ??
+                              'image': listing['image'] ??
                                   listing['photos']?[0]?['image'] ??
                                   'assets/images/products/airpods.jpg',
                               'isReal': true,
@@ -472,17 +431,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               'id': listing['id'],
                               'sellerId': listing['seller']?['id'],
                               'description': listing['description'] ?? '',
-                              // ✅ these two were completely missing — university and location for edit mode
-                              'location':
-                                  listing['location']?.toString() ??
+                              'location': listing['location']?.toString() ??
                                   listing['university']?.toString() ??
                                   '',
-                              'university':
-                                  listing['university']?.toString() ??
+                              'university': listing['university']?.toString() ??
                                   listing['location']?.toString() ??
                                   '',
-                              'images':
-                                  listing['images'] ??
+                              'images': listing['images'] ??
                                   (listing['image'] != null
                                       ? [listing['image']]
                                       : []),
@@ -516,8 +471,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                       isRated: false,
                                       onFavoriteToggle: () {},
                                       onRatingToggle: () {},
-                                      onEdit: () {
-                                        Navigator.push(
+                                      onEdit: () async {
+                                        await Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) => AddNewProductScreen(
@@ -525,6 +480,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                             ),
                                           ),
                                         );
+                                        // ✅ Refresh after editing so Deals counter updates
+                                        if (mounted) _loadAll();
                                       },
                                     ),
                                     if ((product['status'] ?? 'active') !=
@@ -600,7 +557,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ),
                   ),
                   const Divider(height: 1, color: Color(0xffdfe1e6)),
-
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
                     title: const Text(
@@ -611,7 +567,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       ">",
                       style: TextStyle(fontSize: screenWidth * 0.04),
                     ),
-                    // ✅ Replace with this:
                     onTap: () async {
                       Navigator.pop(context);
                       final result = await Navigator.push<Map<String, dynamic>>(
@@ -640,7 +595,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     },
                   ),
                   const Divider(height: 1, color: Color(0xffdfe1e6)),
-
                   SwitchListTile(
                     secondary: const Icon(Icons.notifications_outlined),
                     title: const Text(
@@ -652,7 +606,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     onChanged: (v) => _toggleNotifications(v, setModalState),
                   ),
                   const Divider(height: 1, color: Color(0xffdfe1e6)),
-
                   SwitchListTile(
                     secondary: const Icon(Icons.email_outlined),
                     title: const Text(
@@ -664,7 +617,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     onChanged: (v) => _toggleShowEmail(v, setModalState),
                   ),
                   const Divider(height: 1, color: Color(0xffdfe1e6)),
-
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
                     title: const Text(
@@ -760,8 +712,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
     if (picked != null && mounted) {
       setState(() => _avatarImage = File(picked.path));
-      // TODO: upload to backend
-      // await ProfileApiService.updateAvatar(File(picked.path));
     }
   }
 

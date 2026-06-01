@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:compusmarket/services/profile_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/university_service.dart';
@@ -240,23 +241,24 @@ class _AddNewProductScreenState extends State<AddNewProductScreen> {
         final id = int.tryParse(widget.product!['id'].toString()) ?? 0;
 
         await AnnouncementService.updateAnnouncement(
-          id,
-          {
-            'title': _nameController.text.trim(),
-            'description': _descriptionController.text.trim(),
-            'price': _priceController.text.trim(),
-            'category': categoryId,
-            'university': universityId,
-            'location': _selectedUniversity ?? '',
-           // 'status': _selectedStatus,
-           // 'status': _isReserved ? 'reserved' : 'active',
-            'model':_modelController.text.trim(),
-          },
-          _selectedImages.isNotEmpty
-              ? _selectedImages.map((f) => f.path).toList()
-              : null,
-        );
-          await AnnouncementService.changeStatus(id, _selectedStatus);
+  id,
+  {
+    'title': _nameController.text.trim(),
+    'description': _descriptionController.text.trim(),
+    'price': _priceController.text.trim(),
+    'category': categoryId,
+    'university': universityId,
+    'location': _selectedUniversity ?? '',
+    'model': _modelController.text.trim(),
+  },
+  _selectedImages.isNotEmpty
+      ? _selectedImages.map((f) => f.path).toList()
+      : null,
+);
+await AnnouncementService.changeStatus(id, _selectedStatus);
+// ✅ No markListingAsSold — backend handles completed_sales in changeStatus
+         await AnnouncementService.changeStatus(id, _selectedStatus);
+
 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

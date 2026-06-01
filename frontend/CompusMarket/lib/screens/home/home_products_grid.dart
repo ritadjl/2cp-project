@@ -97,30 +97,27 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
       );
       final List results = data['results'] ?? [];
       final real = results.take(5).map((item) {
-        print(
-          'DEBUG item: id=${item['id']}, seller=${item['seller']}, seller_id=${item['seller_id']}',
-        );
-        if (results.isNotEmpty) {
-          debugPrint('FIRST PRODUCT API DATA: ${results[0]}');
-        }
-        return {
-          'id': item['id'],
-          'name': item['title'] ?? '',
-          'price': '${item['price']} DA',
-          'priceValue': double.tryParse(item['price'].toString()) ?? 0.0,
-          'category': item['category'] ?? '',
-          'rating': (item['average_rating'] ?? 0.0).toDouble(),
-          'isRated': false,
-          'isFavorited': item['is_favorited'] == true,
-          'image': item['photo'] ?? '',
-          'isReal': true,
-          'seller': item['seller'] ?? '',
-          'seller_id': item['seller_id']?.toString() ?? '', // 👈 add this
-          'university': item['university'] ?? '',
-          'photos': item['photos'],
-          'status': item['status']?.toString() ?? 'active',
-        };
-      }).toList();
+  print('DEBUG item: id=${item['id']}, seller=${item['seller']}, seller_id=${item['seller_id']}');
+  if (results.isNotEmpty) {
+  debugPrint('FIRST PRODUCT API DATA: ${results[0]}');
+}
+  return {
+    'id': item['id'],
+    'name': item['title'] ?? '',
+    'price': '${item['price']} DA',
+    'priceValue': double.tryParse(item['price'].toString()) ?? 0.0,
+    'category': item['category'] ?? '',
+    'rating': (item['average_rating'] ?? 0.0).toDouble(),
+    'isRated': false,
+    'image': item['photo'] ?? '',
+    'isReal': true,
+    'seller': item['seller'] ?? '',
+    'seller_id': item['seller_id']?.toString() ?? '',  // 👈 add this
+    'university': item['university'] ?? '',
+    'photos': item['photos'],
+    'status': item['status']?.toString() ?? 'active',
+  };
+}).toList();
 
       if (mounted) {
         setState(() {
