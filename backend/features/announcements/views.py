@@ -92,10 +92,10 @@ class AnnouncementListAPIView(generics.ListAPIView):
 
         student_id = self.request.query_params.get('student_id')
         if student_id:
-            queryset = queryset.filter(student_id=student_id)    
+            queryset = queryset.filter(student_id=student_id)
 
         return queryset
-    
+
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
@@ -161,7 +161,7 @@ class AnnouncementCreateAPIView(generics.CreateAPIView):
             for photo in announcement.photos.all().order_by('position'):
                 photos_data.append({
                     'url': request.build_absolute_uri(photo.image.url)
-                      })
+                })
 
             response_data = {
                 'id': announcement.id,
@@ -353,7 +353,7 @@ class AnnouncementStatusUpdateAPIView(generics.UpdateAPIView):
         if status_value not in ['active', 'sold', 'expired', 'reserved']:
             return Response({'error': 'Invalid status'}, status=400)
 
-        # ✅ Increment completed_sales only when transitioning TO sold for the first time
+        # ✅ ADDED: only increment when transitioning TO sold (prevents double counting)
         if status_value == 'sold' and instance.status != 'sold':
             try:
                 profile = request.user.profile
@@ -462,7 +462,6 @@ class ReportListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return Report.objects.filter(reporter_id=self.request.user.id)
-<<<<<<< HEAD
 
 
 class DebugSellerPhotoView(generics.GenericAPIView):
@@ -477,6 +476,3 @@ class DebugSellerPhotoView(generics.GenericAPIView):
             'student_found': s is not None,
             'profile_picture': str(s.profile_picture) if s else None,
         })
-=======
-     
->>>>>>> d00e7b87f24c1adc952cd5b5a6d3c28f23ecd85f
