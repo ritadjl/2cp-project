@@ -1148,9 +1148,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   builder: (ctx) => AlertDialog(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
-                    title: const Text('Delete Product'),
+                    title: const Text('Archive Product'),
                     content: const Text(
-                        'Are you sure you want to delete this product?'),
+                        'Are you sure you want to archive this product?'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
@@ -1161,7 +1161,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         onPressed: () => Navigator.pop(ctx, true),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red),
-                        child: const Text('Delete',
+                        child: const Text('Archive',
                             style: TextStyle(color: Colors.white)),
                       ),
                     ],
@@ -1169,16 +1169,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 );
                 if (confirm == true) {
                   try {
-                    await AnnouncementService.deleteAnnouncement(
-                        widget.product['id']);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content:
-                                Text('Product deleted successfully')),
-                      );
-                      Navigator.pop(context);
-                    }
+                    await AnnouncementService.archiveAnnouncement(
+    widget.product['id']);
+if (mounted) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+        content: Text('Product archived successfully')),
+  );
+  Navigator.pop(context);
+}
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1271,7 +1270,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: _isOwnProduct
-                  ? Colors.red
+                  ? Colors.orange
                   : const Color(0xFF1A73E8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -1280,7 +1279,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               elevation: 0,
             ),
             child: Text(
-              _isOwnProduct ? 'Delete Product' : 'Contact seller',
+              _isOwnProduct ? 'Archive Product' : 'Contact seller',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

@@ -32,6 +32,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   double _averageRating = 0.0;
 
   List<dynamic> _myListings = [];
+  List<dynamic> _archivedListings = [];
   List<dynamic> _universities = [];
 
   bool _showAll = false;
@@ -93,8 +94,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           _userUniversityName = authMe['university']?['name'] ?? '';
           _notificationsEnabled = profile['notifications_enabled'] ?? false;
           _showEmail = profile['show_email'] ?? false;
-          _myListings = listings;
-          _itemsCount = listings.length;
+          _myListings = listings.where((l) => l['status'] != 'archived').toList();
+_archivedListings = listings.where((l) => l['status'] == 'archived').toList();
+_itemsCount = _myListings.length;
           // ✅ Read completed_sales from profile instead of deals list
           _dealsCount = profile['completed_sales'] ?? 0;
           _averageRating =
@@ -519,7 +521,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         ),
                       ),
 
-                    SizedBox(height: screenHeight * 0.03),
+                    SizedBox(height: screenHeight * 0.1),
                   ],
                 ),
               ),
@@ -596,6 +598,23 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         _loadAll();
                       }
                     },
+                  ),
+
+                   const Divider(height: 1, color: Color(0xffdfe1e6)),
+                   ListTile(
+                    leading: const Icon(Icons.inventory_2_outlined),
+                    title: const Text(
+                      "Archive Products",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    trailing: Text(
+                      ">",
+                      style: TextStyle(fontSize: screenWidth * 0.04),
+                    ),
+                    onTap: () {
+  Navigator.pop(context);
+  _showArchivedProducts();
+},
                   ),
                   const Divider(height: 1, color: Color(0xffdfe1e6)),
                   SwitchListTile(
@@ -742,4 +761,112 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       ),
     );
   }
+
+  void _showArchivedProducts() {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(
+          leading: const BackButton(),
+          title: const Text(
+            'Archived Products',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0.5,
+        ),
+        backgroundColor: Colors.white,
+        body: Builder(
+          builder: (context) {
+            final archivedListings = _archivedListings;
+
+            if (archivedListings.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No archived products.',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              );
+            }
+
+            return GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: archivedListings.length,
+              itemBuilder: (context, index) {
+                final listing = archivedListings[index];
+                final imageUrl =
+                    listing['photos']?[0]?['url'] ??
+                    listing['photos']?[0]?['image'] ??
+                    listing['image'] ??
+                    '';
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                )
+                              : Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.image),
+                                ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                listing['title'] ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${listing['price'] ?? ''} DA',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xff2853af),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}
+
 }

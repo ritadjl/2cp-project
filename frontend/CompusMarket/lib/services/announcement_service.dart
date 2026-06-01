@@ -254,5 +254,9 @@ static Future<void> reportAnnouncement(int announcementId, String reason) async 
   }
 }
 
+static Future<void> deleteAnnouncement(int id) async {
+  await archiveAnnouncement(id);
+}
+
 
 }
