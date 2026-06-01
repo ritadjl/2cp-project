@@ -160,7 +160,7 @@ class AnnouncementCreateAPIView(generics.CreateAPIView):
 
             for photo in announcement.photos.all().order_by('position'):
                 photos_data.append({
-                    'url': request.build_absolute_uri(photo.image.url)  # ← full url
+                    'url': request.build_absolute_uri(photo.image.url)
                       })
 
             response_data = {
@@ -177,10 +177,9 @@ class AnnouncementCreateAPIView(generics.CreateAPIView):
                 {'errors': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
 
     def perform_create(self, serializer):
-     serializer.save()
+        serializer.save()
 
 
 class AnnouncementDetailAPIView(generics.RetrieveAPIView):
@@ -298,7 +297,6 @@ class AnnouncementUpdateAPIView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        # map category/university if sent as IDs
         data = request.data.copy()
 
         serializer = AnnouncementCreateSerializer(
@@ -311,7 +309,6 @@ class AnnouncementUpdateAPIView(generics.UpdateAPIView):
         serializer.validated_data.pop('photos', None)
         serializer.save()
 
-        # handle photos if sent
         photos = request.FILES.getlist('photos')
         if photos:
             instance.photos.all().delete()
@@ -326,6 +323,7 @@ class AnnouncementUpdateAPIView(generics.UpdateAPIView):
             MyAnnouncementSerializer(instance, context={'request': request}).data,
             status=status.HTTP_200_OK
         )
+
 
 class AnnouncementArchiveAPIView(generics.UpdateAPIView):
     serializer_class = AnnouncementCreateSerializer
@@ -351,11 +349,22 @@ class AnnouncementStatusUpdateAPIView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         instance = self.get_object()
         status_value = request.data.get('status')
-        if status_value in ['active', 'sold', 'expired', 'reserved']:
-            instance.status = status_value
-            instance.save()
-            return Response({'status': status_value})
-        return Response({'error': 'Invalid status'}, status=400)
+
+        if status_value not in ['active', 'sold', 'expired', 'reserved']:
+            return Response({'error': 'Invalid status'}, status=400)
+
+        # ✅ Increment completed_sales only when transitioning TO sold for the first time
+        if status_value == 'sold' and instance.status != 'sold':
+            try:
+                profile = request.user.profile
+                profile.completed_sales += 1
+                profile.save()
+            except Exception:
+                pass  # don't block the status update if profile access fails
+
+        instance.status = status_value
+        instance.save()
+        return Response({'status': status_value})
 
 
 class ReviewListCreateAPIView(generics.ListCreateAPIView):
@@ -437,7 +446,8 @@ class CommentUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Comment.objects.filter(user_id=self.request.user.id)
-    
+
+
 class ReportCreateAPIView(generics.CreateAPIView):
     serializer_class = ReportSerializer
     permission_classes = [IsAuthenticated]
@@ -452,7 +462,8 @@ class ReportListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return Report.objects.filter(reporter_id=self.request.user.id)
-    
+
+
 class DebugSellerPhotoView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -464,4 +475,4 @@ class DebugSellerPhotoView(generics.GenericAPIView):
             'student_id': str(a.student_id),
             'student_found': s is not None,
             'profile_picture': str(s.profile_picture) if s else None,
-        })    
+        })
