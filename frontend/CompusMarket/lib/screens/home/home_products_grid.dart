@@ -14,10 +14,42 @@ final ValueNotifier<List<Map<String, dynamic>>> globalRealProductsNotifier =
 
 // ── 15 FIXED FAKE PRODUCTS ──
 const List<Map<String, dynamic>> _fakeProducts = [
-  {'name': 'AirPods', 'price': '4500.00 DA', 'priceValue': 4500.00, 'category': 'Electronics', 'rating': 4.5, 'isRated': false, 'image': 'assets/images/products/airpods.jpg'},
-  {'name': 'Apple Watch', 'price': '15500.00 DA', 'priceValue': 15500.00, 'category': 'Electronics', 'rating': 3.5, 'isRated': false, 'image': 'assets/images/products/applewatch.jpg'},
-  {'name': 'Bike', 'price': '22500.00 DA', 'priceValue': 22500.00, 'category': 'Accessories', 'rating': 4.0, 'isRated': false, 'image': 'assets/images/products/bike.jpg'},
-  {'name': 'Black Airpods', 'price': '2500.00 DA', 'priceValue': 2500.00, 'category': 'Electronics', 'rating': 3.5, 'isRated': false, 'image': 'assets/images/products/blackairpods.jpg'},
+  {
+    'name': 'AirPods',
+    'price': '4500.00 DA',
+    'priceValue': 4500.00,
+    'category': 'Electronics',
+    'rating': 4.5,
+    'isRated': false,
+    'image': 'assets/images/products/airpods.jpg',
+  },
+  {
+    'name': 'Apple Watch',
+    'price': '15500.00 DA',
+    'priceValue': 15500.00,
+    'category': 'Electronics',
+    'rating': 3.5,
+    'isRated': false,
+    'image': 'assets/images/products/applewatch.jpg',
+  },
+  {
+    'name': 'Bike',
+    'price': '22500.00 DA',
+    'priceValue': 22500.00,
+    'category': 'Accessories',
+    'rating': 4.0,
+    'isRated': false,
+    'image': 'assets/images/products/bike.jpg',
+  },
+  {
+    'name': 'Black Airpods',
+    'price': '2500.00 DA',
+    'priceValue': 2500.00,
+    'category': 'Electronics',
+    'rating': 3.5,
+    'isRated': false,
+    'image': 'assets/images/products/blackairpods.jpg',
+  },
 ];
 
 class HomeProductsGrid extends StatefulWidget {
@@ -28,7 +60,6 @@ class HomeProductsGrid extends StatefulWidget {
 
 class _HomeProductsGridState extends State<HomeProductsGrid> {
   List<Map<String, dynamic>> _realProducts = [];
-  
 
   @override
   void initState() {
@@ -60,31 +91,36 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
         page: 1,
         search: filter.searchQuery.isNotEmpty ? filter.searchQuery : null,
         minPrice: filter.priceRange.start > 0 ? filter.priceRange.start : null,
-        maxPrice: filter.priceRange.end < 1000000 ? filter.priceRange.end : null,
+        maxPrice: filter.priceRange.end < 1000000
+            ? filter.priceRange.end
+            : null,
       );
       final List results = data['results'] ?? [];
       final real = results.take(5).map((item) {
-  print('DEBUG item: id=${item['id']}, seller=${item['seller']}, seller_id=${item['seller_id']}');
-  if (results.isNotEmpty) {
-  debugPrint('FIRST PRODUCT API DATA: ${results[0]}');
-}
-  return {
-    'id': item['id'],
-    'name': item['title'] ?? '',
-    'price': '${item['price']} DA',
-    'priceValue': double.tryParse(item['price'].toString()) ?? 0.0,
-    'category': item['category'] ?? '',
-    'rating': (item['average_rating'] ?? 0.0).toDouble(),
-    'isRated': false,
-    'image': item['photo'] ?? '',
-    'isReal': true,
-    'seller': item['seller'] ?? '',
-    'seller_id': item['seller_id']?.toString() ?? '',  // 👈 add this
-    'university': item['university'] ?? '',
-    'photos': item['photos'],
-    'status': item['status']?.toString() ?? 'active',
-  };
-}).toList();
+        print(
+          'DEBUG item: id=${item['id']}, seller=${item['seller']}, seller_id=${item['seller_id']}',
+        );
+        if (results.isNotEmpty) {
+          debugPrint('FIRST PRODUCT API DATA: ${results[0]}');
+        }
+        return {
+          'id': item['id'],
+          'name': item['title'] ?? '',
+          'price': '${item['price']} DA',
+          'priceValue': double.tryParse(item['price'].toString()) ?? 0.0,
+          'category': item['category'] ?? '',
+          'rating': (item['average_rating'] ?? 0.0).toDouble(),
+          'isRated': false,
+          'isFavorited': item['is_favorited'] == true,
+          'image': item['photo'] ?? '',
+          'isReal': true,
+          'seller': item['seller'] ?? '',
+          'seller_id': item['seller_id']?.toString() ?? '', // 👈 add this
+          'university': item['university'] ?? '',
+          'photos': item['photos'],
+          'status': item['status']?.toString() ?? 'active',
+        };
+      }).toList();
 
       if (mounted) {
         setState(() {
@@ -141,7 +177,9 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
                   child: Text(
                     'No products match these filters.',
                     style: TextStyle(
-                        color: Colors.grey, fontSize: screenWidth * 0.045),
+                      color: Colors.grey,
+                      fontSize: screenWidth * 0.045,
+                    ),
                   ),
                 ),
               );
@@ -159,9 +197,11 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
               itemCount: filteredProducts.length,
               itemBuilder: (context, index) {
                 final product = filteredProducts[index];
-                final bool isFavorite = globalFavoriteProducts.any(
-                  (p) => p['name'] == product['name'],
-                );
+                final bool isFavorite =
+                    product['isFavorited'] == true ||
+                    globalFavoriteProducts.any(
+                      (p) => p['name'] == product['name'],
+                    );
                 final bool isRated = globalRatedProducts.any(
                   (p) => p['name'] == product['name'],
                 );
@@ -186,12 +226,14 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
                           if (mounted) {
                             setState(() {
                               globalFavoriteProducts.removeWhere(
-                                  (p) => p['name'] == product['name']);
+                                (p) => p['name'] == product['name'],
+                              );
                             });
                           }
                         } else {
-                          final result =
-                              await FavoriteService.addFavorite(product['id']);
+                          final result = await FavoriteService.addFavorite(
+                            product['id'],
+                          );
                           if (mounted) {
                             setState(() {
                               globalFavoriteProducts.add({
@@ -209,7 +251,8 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
                         setState(() {
                           if (isFavorite) {
                             globalFavoriteProducts.removeWhere(
-                                (p) => p['name'] == product['name']);
+                              (p) => p['name'] == product['name'],
+                            );
                           } else {
                             globalFavoriteProducts.add(product);
                           }
@@ -222,7 +265,8 @@ class _HomeProductsGridState extends State<HomeProductsGrid> {
                       setState(() {
                         if (isRated) {
                           globalRatedProducts.removeWhere(
-                              (p) => p['name'] == product['name']);
+                            (p) => p['name'] == product['name'],
+                          );
                         } else {
                           globalRatedProducts.add(product);
                         }
@@ -272,14 +316,18 @@ class ProductCard extends StatelessWidget {
                 ProductDetailsScreen(product: product),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOut;
-              var tween = Tween(begin: begin, end: end)
-                  .chain(CurveTween(curve: curve));
-              return SlideTransition(
-                  position: animation.drive(tween), child: child);
-            },
+                  const begin = Offset(1.0, 0.0);
+                  const end = Offset.zero;
+                  const curve = Curves.easeInOut;
+                  var tween = Tween(
+                    begin: begin,
+                    end: end,
+                  ).chain(CurveTween(curve: curve));
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
           ),
         );
       },
@@ -319,32 +367,38 @@ class ProductCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 Center(
-                              child: Icon(Icons.image_outlined,
-                                  size: screenWidth * 0.12,
-                                  color: Colors.grey[400]),
-                            ),
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    size: screenWidth * 0.12,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
                           )
                         : isReal
-                            ? Image.network(
-                                product['image'],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Center(
-                                  child: Icon(Icons.image_outlined,
-                                      size: screenWidth * 0.12,
-                                      color: Colors.grey[400]),
+                        ? Image.network(
+                            product['image'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    size: screenWidth * 0.12,
+                                    color: Colors.grey[400],
+                                  ),
                                 ),
-                              )
-                            : Image.asset(
-                                product['image'],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Center(
-                                  child: Icon(Icons.image_outlined,
-                                      size: screenWidth * 0.12,
-                                      color: Colors.grey[400]),
+                          )
+                        : Image.asset(
+                            product['image'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    size: screenWidth * 0.12,
+                                    color: Colors.grey[400],
+                                  ),
                                 ),
-                              ),
+                          ),
                   ),
                   Positioned(
                     bottom: 8,
@@ -359,33 +413,36 @@ class ProductCard extends StatelessWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4),
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                            ),
                           ],
                         ),
                         child: Center(
                           child: onEdit != null
-                              ? Icon(Icons.edit_outlined,
+                              ? Icon(
+                                  Icons.edit_outlined,
                                   color: const Color(0xff2853af),
-                                  size: screenWidth * 0.05)
+                                  size: screenWidth * 0.05,
+                                )
                               : Icon(
                                   isFavorite
                                       ? Icons.favorite
                                       : Icons.favorite_border,
-                                  color:
-                                      isFavorite ? Colors.red : Colors.grey,
-                                  size: screenWidth * 0.05),
+                                  color: isFavorite ? Colors.red : Colors.grey,
+                                  size: screenWidth * 0.05,
+                                ),
                         ),
                       ),
                     ),
                   ),
                   // Add this after the existing Positioned(top: 8, right: 8, ...) block:
-if ((product['status'] ?? 'active') != 'active')
-  Positioned(
-    top: 8,
-    left: 8,
-    child: StatusBadge(status: product['status'] ?? ''),
-  ),
+                  if ((product['status'] ?? 'active') != 'active')
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: StatusBadge(status: product['status'] ?? ''),
+                    ),
                 ],
               ),
             ),
@@ -416,7 +473,6 @@ if ((product['status'] ?? 'active') != 'active')
                           color: const Color(0xFF1A73E8),
                         ),
                       ),
-                      
                     ],
                   ),
                 ],
@@ -442,7 +498,9 @@ class StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xff2853af),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

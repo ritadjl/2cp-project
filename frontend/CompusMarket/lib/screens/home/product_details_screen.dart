@@ -33,7 +33,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
-     _loadSavedRating();
+    _loadSavedRating();
     debugPrint('PRODUCT DATA: ${widget.product}');
 
     final productName = widget.product['name'] ?? widget.product['title'] ?? '';
@@ -60,6 +60,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     if (galleryImages.isEmpty) galleryImages = [''];
+    _loadFullDetails();
   }
 
   String get _productName =>
@@ -78,11 +79,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return sellerId != null && sellerId == MsgService.currentUserId;
   }
 
-Future<void> _loadSavedRating() async {
+  Future<void> _loadSavedRating() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getInt('rating_${widget.product['id']}') ?? 0;
     if (mounted) setState(() => _userRating = saved);
   }
+
   void _toggleFavorite() async {
     final bool isReal = widget.product['isReal'] == true;
     final String productName = _productName;
@@ -133,7 +135,9 @@ Future<void> _loadSavedRating() async {
           );
           final favoriteId = existing['favoriteId'];
           if (favoriteId != null) {
-            final int parsedId = favoriteId is int ? favoriteId : int.parse(favoriteId.toString());
+            final int parsedId = favoriteId is int
+                ? favoriteId
+                : int.parse(favoriteId.toString());
             await FavoriteService.removeFavorite(parsedId);
           }
           if (mounted) {
@@ -206,7 +210,7 @@ Future<void> _loadSavedRating() async {
           'Inappropriate Content',
           'Harassment or Abuse',
           'Fake Product / Scam',
-          'Other'
+          'Other',
         ];
         return StatefulBuilder(
           builder: (context, setStateDialog) {
@@ -248,45 +252,53 @@ Future<void> _loadSavedRating() async {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 ElevatedButton(
-          onPressed: () async {
-  print('DEBUG: Report button tapped');
-  try {
-    final reasonMap = {
-      'Spam / Misleading': 'spam',
-      'Inappropriate Content': 'inappropriate',
-      'Harassment or Abuse': 'offensive',
-      'Fake Product / Scam': 'scam',
-      'Other': 'other',
-    };
-    final reasonKey = reasonMap[selectedReason] ?? 'other';
-    await AnnouncementService.reportAnnouncement(
-      widget.product['id'],
-      reasonKey,
-    );
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Report submitted! Our team will review it.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } catch (e) {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to report: $e')),
-    );
-  }
-},
+                  onPressed: () async {
+                    print('DEBUG: Report button tapped');
+                    try {
+                      final reasonMap = {
+                        'Spam / Misleading': 'spam',
+                        'Inappropriate Content': 'inappropriate',
+                        'Harassment or Abuse': 'offensive',
+                        'Fake Product / Scam': 'scam',
+                        'Other': 'other',
+                      };
+                      final reasonKey = reasonMap[selectedReason] ?? 'other';
+                      await AnnouncementService.reportAnnouncement(
+                        widget.product['id'],
+                        reasonKey,
+                      );
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Report submitted! Our team will review it.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    } catch (e) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to report: $e')),
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text('Submit Report', style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Submit Report',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -401,14 +413,16 @@ Future<void> _loadSavedRating() async {
         final commentsData = await AnnouncementService.getComments(
           widget.product['id'],
         );
-if (commentsData.isNotEmpty) debugPrint('COMMENT DATA: ${commentsData.first}');
+        if (commentsData.isNotEmpty)
+          debugPrint('COMMENT DATA: ${commentsData.first}');
         if (mounted) {
           setState(() {
             _comments = List<Map<String, dynamic>>.from(
               commentsData.map(
                 (e) => {
                   'text': e['content'] ?? e['text'] ?? '',
-                  'user': e['user_full_name'] ?? e['user']?['full_name'] ?? 'User',
+                  'user':
+                      e['user_full_name'] ?? e['user']?['full_name'] ?? 'User',
                 },
               ),
             );
@@ -555,14 +569,14 @@ if (commentsData.isNotEmpty) debugPrint('COMMENT DATA: ${commentsData.first}');
                               if (widget.product['isReal'] == true) {
                                 try {
                                   await AnnouncementService.createComment(
-  widget.product['id'],
-  text,
-);
-if (mounted) {
-  // Reload comments from API after posting
-  isFetching = false;
-  loadData(setStateBottomSheet);
-}
+                                    widget.product['id'],
+                                    text,
+                                  );
+                                  if (mounted) {
+                                    // Reload comments from API after posting
+                                    isFetching = false;
+                                    loadData(setStateBottomSheet);
+                                  }
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -623,10 +637,7 @@ if (mounted) {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.black,
-                      ),
+                      child: const Icon(Icons.arrow_back, color: Colors.black),
                     ),
                   ),
                   const Expanded(
@@ -641,7 +652,9 @@ if (mounted) {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 45), // Balancing spacer for perfect centering
+                  const SizedBox(
+                    width: 45,
+                  ), // Balancing spacer for perfect centering
                 ],
               ),
             ),
@@ -704,40 +717,51 @@ if (mounted) {
                               ),
                             ),
                           ),
-                          // Add inside the Stack that contains the PageView, after the dot indicators Positioned:
-if ((widget.product['status'] ?? 'active') != 'active')
-  Positioned(
-    top: 80,
-    left: 20,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xff2853af),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 6)],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            widget.product['status'] == 'sold' ? Icons.sell : Icons.timer_off,
-            color: Colors.white,
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            (widget.product['status'] ?? '').toUpperCase(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              letterSpacing: 1,
-            ),
-          ),
-        ],
-      ),
-    ),
-  ),
+                        // Add inside the Stack that contains the PageView, after the dot indicators Positioned:
+                        if ((widget.product['status'] ?? 'active') != 'active')
+                          Positioned(
+                            top: 80,
+                            left: 20,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xff2853af),
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    widget.product['status'] == 'sold'
+                                        ? Icons.sell
+                                        : Icons.timer_off,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    (widget.product['status'] ?? '')
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -763,9 +787,7 @@ if ((widget.product['status'] ?? 'active') != 'active')
                         ],
                       ),
                       child: Icon(
-                        isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
                         color: isFavorite ? Colors.red : Colors.grey,
                       ),
                     ),
@@ -819,17 +841,23 @@ if ((widget.product['status'] ?? 'active') != 'active')
               child: Row(
                 children: [
                   // FIXED — shows seller_photo from API, falls back to icon
-CircleAvatar(
-  backgroundColor: const Color(0xFF1A73E8),
-  backgroundImage: (widget.product['seller_photo'] != null &&
-          widget.product['seller_photo'].toString().isNotEmpty)
-      ? NetworkImage(widget.product['seller_photo'].toString())
-      : null,
-  child: (widget.product['seller_photo'] == null ||
-          widget.product['seller_photo'].toString().isEmpty)
-      ? const Icon(Icons.person, color: Colors.white)
-      : null,
-),
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFF1A73E8),
+                    backgroundImage:
+                        (widget.product['seller_photo'] != null &&
+                            widget.product['seller_photo']
+                                .toString()
+                                .isNotEmpty)
+                        ? NetworkImage(
+                            widget.product['seller_photo'].toString(),
+                          )
+                        : null,
+                    child:
+                        (widget.product['seller_photo'] == null ||
+                            widget.product['seller_photo'].toString().isEmpty)
+                        ? const Icon(Icons.person, color: Colors.white)
+                        : null,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -855,25 +883,29 @@ CircleAvatar(
                       ],
                     ),
                   ),
-                 if (!_isOwnProduct)
-  TextButton(
-    onPressed: () {
-      final sellerId = widget.product['seller_id']?.toString();
-      if (sellerId == null || sellerId.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seller info not available')),
-        );
-        return;
-      }
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HisProfileScreen(sellerId: sellerId),
-        ),
-      );
-    },
-    child: const Text('View Profile'),
-  ),
+                  if (!_isOwnProduct)
+                    TextButton(
+                      onPressed: () {
+                        final sellerId = widget.product['seller_id']
+                            ?.toString();
+                        if (sellerId == null || sellerId.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Seller info not available'),
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                HisProfileScreen(sellerId: sellerId),
+                          ),
+                        );
+                      },
+                      child: const Text('View Profile'),
+                    ),
                 ],
               ),
             ),
@@ -935,42 +967,54 @@ CircleAvatar(
                     child: Row(
                       children: [
                         Container(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  decoration: BoxDecoration(
-    color: Colors.amber.withOpacity(0.1),
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: Colors.amber.withOpacity(0.5)),
-  ),
-  child: Row(
-    children: List.generate(5, (index) {
-      return GestureDetector(
-        onTap: () async {
-  final int selectedRating = index + 1;
-  setState(() {
-    _userRating = selectedRating;
-    isRated = true;
-  });
-   final prefs = await SharedPreferences.getInstance(); // ← add
-  await prefs.setInt('rating_${widget.product['id']}', selectedRating);
-  if (widget.product['isReal'] == true) {
-    try {
-      await AnnouncementService.rateAnnouncement(
-        widget.product['id'],
-        rating: selectedRating,
-      );
-    } catch (e) {
-      print('❌ Rating failed: $e');
-    }
-  }
-},
-        child: Icon(
-index < _userRating ? Icons.star : Icons.star_border,          color: Colors.amber,
-          size: 20,
-        ),
-      );
-    }),
-  ),
-),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.amber.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Row(
+                            children: List.generate(5, (index) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  final int selectedRating = index + 1;
+                                  setState(() {
+                                    _userRating = selectedRating;
+                                    isRated = true;
+                                  });
+                                  final prefs =
+                                      await SharedPreferences.getInstance(); // ← add
+                                  await prefs.setInt(
+                                    'rating_${widget.product['id']}',
+                                    selectedRating,
+                                  );
+                                  if (widget.product['isReal'] == true) {
+                                    try {
+                                      await AnnouncementService.rateAnnouncement(
+                                        widget.product['id'],
+                                        rating: selectedRating,
+                                      );
+                                    } catch (e) {
+                                      print('❌ Rating failed: $e');
+                                    }
+                                  }
+                                },
+                                child: Icon(
+                                  index < _userRating
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 20,
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
                         const SizedBox(width: 15),
                         GestureDetector(
                           onTap: () => _showCommentsSheet(context),
@@ -1144,31 +1188,38 @@ index < _userRating ? Icons.star : Icons.star_border,          color: Colors.amb
                 final last = (seller['last_name'] ?? '').toString().trim();
                 final name = [first, last].where((s) => s.isNotEmpty).join(' ');
 
-               if (mounted) {
-  
-  final announcement = {
-    'id': widget.product['id'],
-    'title': widget.product['name'] ?? widget.product['title'] ?? '',
-    'price': widget.product['priceValue'] ?? widget.product['price'] ?? '',
-    'photo': galleryImages.isNotEmpty && galleryImages[0].isNotEmpty
-      ? galleryImages[0]  // ✅ use the already-resolved first image
-      : '',
-    'currency': 'DA',
-  };
+                if (mounted) {
+                  final announcement = {
+                    'id': widget.product['id'],
+                    'title':
+                        widget.product['name'] ?? widget.product['title'] ?? '',
+                    'price':
+                        widget.product['priceValue'] ??
+                        widget.product['price'] ??
+                        '',
+                    'photo':
+                        galleryImages.isNotEmpty && galleryImages[0].isNotEmpty
+                        ? galleryImages[0] // ✅ use the already-resolved first image
+                        : '',
+                    'currency': 'DA',
+                  };
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ChatsInScreen(
-        name: name.isNotEmpty ? name : seller['email'] ?? 'Seller',
-        conversationId: conversation['id'],
-        isNetwork: false,
-        isOnline: false,
-        announcement: announcement, // ✅ now the product card shows in chat
-      ),
-    ),
-  );
-}
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatsInScreen(
+                        name: name.isNotEmpty
+                            ? name
+                            : seller['email'] ?? 'Seller',
+                        conversationId: conversation['id'],
+                        isNetwork: false,
+                        isOnline: false,
+                        announcement:
+                            announcement, // ✅ now the product card shows in chat
+                      ),
+                    ),
+                  );
+                }
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Could not open chat: $e')),
@@ -1195,5 +1246,34 @@ index < _userRating ? Icons.star : Icons.star_border,          color: Colors.amb
         ),
       ),
     );
+  }
+
+  Future<void> _loadFullDetails() async {
+    final int? announcementId = widget.product['id'];
+
+    // Only fetch for real database announcements
+    if (announcementId != null && widget.product['isReal'] == true) {
+      try {
+        final details = await AnnouncementService.getAnnouncementDetails(
+          announcementId,
+        );
+        final photos = details['photos'];
+
+        if (photos != null && photos is List && photos.isNotEmpty) {
+          final List<String> loadedUrls = photos
+              .map((p) => p is Map ? (p['url'] ?? '').toString() : p.toString())
+              .where((url) => url.isNotEmpty)
+              .toList();
+
+          if (mounted && loadedUrls.isNotEmpty) {
+            setState(() {
+              galleryImages = loadedUrls;
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ Failed to fetch full product details: $e');
+      }
+    }
   }
 }
