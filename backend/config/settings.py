@@ -62,7 +62,7 @@ INSTALLED_APPS = [
 ]
 
 # ══════════════════════════════════════════════════════════════════
-#  JAZZMIN — À coller à la fin de ton settings.py
+#  JAZZMIN 
 # ══════════════════════════════════════════════════════════════════
 
 JAZZMIN_SETTINGS = {
@@ -113,9 +113,7 @@ JAZZMIN_SETTINGS = {
         "deals",
         "reviews",
         "accounts",
-        "moderation",
-        "messaging",
-        "notifications",
+        
     ],
 
     # ── Icônes (Font Awesome 5) ───────────────────────────────────
@@ -128,9 +126,7 @@ JAZZMIN_SETTINGS = {
         "deals":                     "fas fa-handshake",
         "reviews":                   "fas fa-star-half-alt",
         "accounts":                  "fas fa-id-card",
-        "moderation":                "fas fa-shield-alt",
-        "messaging":                 "fas fa-comments",
-        "notifications":             "fas fa-bell",
+        
 
         # Modèles
         "authentication.User":             "fas fa-user",
@@ -142,7 +138,7 @@ JAZZMIN_SETTINGS = {
         "announcements.Photo":         "fas fa-image",
         "announcements.Favorite":      "fas fa-heart",
         "announcements.Review":        "fas fa-star",
-        "announcements.Comment":       "fas fa-comment",
+        "announcements.Comment":       "fas fa-comment",    
         "announcements.Report":        "fas fa-flag",
 
         "universities.University":     "fas fa-university",
@@ -166,6 +162,10 @@ JAZZMIN_SETTINGS = {
     "show_ui_builder":       False,   # désactiver en prod
     "related_modal_active":  True,    # popups pour FK
     "changeform_format":     "horizontal_tabs",
+    "hide_apps": [
+        "messaging",
+        "notifications",
+    ],
 }
 
 JAZZMIN_UI_TWEAKS = {

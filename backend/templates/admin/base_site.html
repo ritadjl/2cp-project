@@ -107,7 +107,7 @@
     }
 
     /* ══════════════════════════════════════════════════
-       BOUTON ACTION (dropdown bas gauche)
+       BOUTON ACTION 
     ══════════════════════════════════════════════════ */
     html[data-bs-theme="dark"] #changelist select,
     html[data-bs-theme="dark"] .actions select {
@@ -117,7 +117,7 @@
       border-radius: 8px !important;
       
 
-  /* ── BOUTON LOUPE NAVBAR → transparent sur bleu ── */
+  /* ── BOUTON LOUPE NAVBAR  */
 nav.app-header .btn-navbar,
 nav.app-header.navbar .btn-navbar,
 #jazzy-navbar .btn-navbar,
@@ -139,6 +139,17 @@ html body nav.app-header.navbar button.btn.btn-navbar[type="submit"] {
   border: 1px solid rgba(255,255,255,0.25) !important;
   color: rgba(255,255,255,0.85) !important;
   box-shadow: none !important;
+}
+ html body nav.app-header.navbar .nav-link.btn {
+    background-color: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+    color: rgba(255,255,255,0.85) !important;
+    box-shadow: none !important;
+}
+
+html body nav.app-header.navbar .nav-link.btn:hover {
+    background-color: rgba(255,255,255,0.25) !important;
+    color: #ffffff !important;
 }
   </style>
 {% endblock %}
